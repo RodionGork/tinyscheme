@@ -1,5 +1,9 @@
 # TinyScheme
 
+_Disclaimer: this repo is not related to original authors, and I have no intention
+to take over their fame or their work. It's created rather in attempt to see if
+I can understand the project and, perhaps, find a way to help with it._
+
 This is small `Scheme` language implementation written in `C` language to provide
 script abilities to C programs or be used standalone. It saw use in some popular
 application, among them a plugin for GIMP graphic editor.
