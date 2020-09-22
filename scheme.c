@@ -3441,7 +3441,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
           str=strvalue(car(sc->args));
 
           x=cadr(sc->args);
-          if (is_integer(x)) {
+          if (!is_integer(x)) {
                Error_1(sc,"string-ref: index must be exact:",x);
           }
 
@@ -3465,7 +3465,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
           str=strvalue(car(sc->args));
 
           x=cadr(sc->args);
-          if (is_integer(x)) {
+          if (!is_integer(x)) {
                Error_1(sc,"string-set!: index must be exact:",x);
           }
 
@@ -3571,7 +3571,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
           int index;
 
           x=cadr(sc->args);
-          if (is_integer(x)) {
+          if (!is_integer(x)) {
                Error_1(sc,"vector-ref: index must be exact:",x);
           }
           index=ivalue(x);
@@ -3592,7 +3592,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
           }
 
           x=cadr(sc->args);
-          if (is_integer(x)) {
+          if (!is_integer(x)) {
                Error_1(sc,"vector-set!: index must be exact:",x);
           }
 
@@ -4862,7 +4862,6 @@ void scheme_load_named_file(scheme *sc, FILE *fin, const char *filename) {
     sc->load_stack[0].rep.stdio.filename = NULL;
 #endif
 
-  sc->inport=sc->loadport;
   sc->args = mk_integer(sc,sc->file_i);
   Eval_Cycle(sc, OP_T0LVL);
   typeflag(sc->loadport)=T_ATOM;
@@ -4882,7 +4881,6 @@ void scheme_load_string(scheme *sc, const char *cmd) {
   sc->loadport=mk_port(sc,sc->load_stack);
   sc->retcode=0;
   sc->interactive_repl=0;
-  sc->inport=sc->loadport;
   sc->args = mk_integer(sc,sc->file_i);
   Eval_Cycle(sc, OP_T0LVL);
   typeflag(sc->loadport)=T_ATOM;
