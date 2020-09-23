@@ -9,4 +9,6 @@
 
 SCHEME_EXPORT pointer scm_load_ext(scheme *sc, pointer arglist);
 
+void scm_unload_ext(SCHEME_EXPORT pointer ptr);
+
 #endif

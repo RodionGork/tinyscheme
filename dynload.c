@@ -76,7 +76,9 @@ static HMODULE dl_attach(const char *module) {
 
 static FARPROC dl_proc(HMODULE mo, const char *proc) {
   const char *errmsg;
-  FARPROC fp=(FARPROC)dlsym(mo,proc);
+  FARPROC fp;
+  
+  *(void**)(&fp) = dlsym(mo,proc);
   if ((errmsg = dlerror()) == 0) {
     return fp;
   }
@@ -89,13 +91,14 @@ static void dl_detach(HMODULE mo) {
 }
 #endif
 
+static HMODULE dll_handle;
+
 pointer scm_load_ext(scheme *sc, pointer args)
 {
    pointer first_arg;
    pointer retval;
    char filename[MAXPATHLEN], init_fn[MAXPATHLEN+6];
    char *name;
-   HMODULE dll_handle;
    void (*module_init)(scheme *sc);
 
    if ((args != sc->NIL) && is_string((first_arg = pair_car(args)))) {
@@ -122,6 +125,12 @@ pointer scm_load_ext(scheme *sc, pointer args)
    }
 
   return(retval);
+}
+
+void scm_unload_ext(pointer ptr)
+{
+    //todo: this is not supposed to work yet, but probably not greatly needed anyway
+    dl_detach(dll_handle);
 }
 
 static void make_filename(const char *name, char *filename) {
