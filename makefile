@@ -69,6 +69,8 @@ LIBTARGET = $(LIBPREFIX)tinyscheme.$(SOsuf)
 STATICLIBTARGET = $(LIBPREFIX)tinyscheme.$(LIBsuf)
 
 all: $(LIBTARGET) $(STATICLIBTARGET) scheme$(EXE_EXT)
+	@echo -------
+	@echo All done, enjoy ./scheme$(EXE_EXT)
 
 %.$(Osuf): %.c
 	$(CC) -I. -c $(DEBUG) $(FEATURES) $(DL_FLAGS) $<
