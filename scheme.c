@@ -154,7 +154,6 @@ static int num_le(num a, num b);
 #if USE_MATH
 static double round_per_R5RS(double x);
 #endif
-static int is_zero_double(double x);
 static INLINE int num_is_integer(pointer p) {
   return ((p)->_object._number.is_fixnum);
 }
@@ -408,7 +407,10 @@ static num num_mul(num a, num b) {
 
 static num num_div(num a, num b) {
  num ret;
- ret.is_fixnum=a.is_fixnum && b.is_fixnum && a.value.ivalue%b.value.ivalue==0;
+ ret.is_fixnum =
+   a.is_fixnum && b.is_fixnum
+   && b.value.ivalue != 0
+   && a.value.ivalue % b.value.ivalue == 0;
  if(ret.is_fixnum) {
      ret.value.ivalue= a.value.ivalue/b.value.ivalue;
  } else {
@@ -545,10 +547,6 @@ static double round_per_R5RS(double x) {
  }
 }
 #endif
-
-static int is_zero_double(double x) {
- return x<DBL_MIN && x>-DBL_MIN;
-}
 
 static long binary_decode(const char *s) {
  long x=0;
@@ -3259,11 +3257,7 @@ static pointer opexe_2(scheme *sc, enum scheme_opcodes op) {
          v = nvalue(car(sc->args));
        }
        for (; x != sc->NIL; x = cdr(x)) {
-         if (!is_zero_double(rvalue(car(x))))
-           v=num_div(v,nvalue(car(x)));
-         else {
-           Error_0(sc,"/: division by zero");
-         }
+         v=num_div(v,nvalue(car(x)));
        }
        s_return(sc,mk_number(sc, v));
 
