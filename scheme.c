@@ -67,6 +67,7 @@
 #if CASE_SENSITIVE
 #define str_eq_to_lower(X,Y) (!strcmp((X),(Y)))
 #define str_eq(X,Y) (!strcmp((X),(Y)))
+#define str_to_maybe_lower(X) (X)
 #else
 
 static int str_eq_to_lower(const char *s1, const char *s2)
@@ -91,10 +92,7 @@ static int str_eq(const char *s1, const char *s2)
   return (*s2 == 0);
 }
 
-#endif // CASE_SENSITIVE
-
-#if USE_STRLWR
-static const char *strlwr(char *s) {
+static const char *str_to_maybe_lower(char *s) {
   const char *p=s;
   while(*s) {
     *s=tolower(*s);
@@ -102,7 +100,8 @@ static const char *strlwr(char *s) {
   }
   return p;
 }
-#endif
+
+#endif // CASE_SENSITIVE
 
 #ifndef prompt
 # define prompt "ts> "
@@ -1042,7 +1041,7 @@ static pointer mk_atom(scheme *sc, char *q) {
                               cons(sc,
                                    sc->QUOTE,
                                    cons(sc, mk_atom(sc,p+2), sc->NIL)),
-                              cons(sc, mk_symbol(sc,strlwr(q)), sc->NIL)));
+                              cons(sc, mk_symbol(sc, str_to_maybe_lower(q)), sc->NIL)));
      }
 #endif
 
@@ -1055,16 +1054,16 @@ static pointer mk_atom(scheme *sc, char *q) {
          c = *p++;
        }
        if (!isdigit(c)) {
-         return (mk_symbol(sc, strlwr(q)));
+         return (mk_symbol(sc, str_to_maybe_lower(q)));
        }
      } else if (c == '.') {
        has_dec_point=1;
        c = *p++;
        if (!isdigit(c)) {
-         return (mk_symbol(sc, strlwr(q)));
+         return (mk_symbol(sc, str_to_maybe_lower(q)));
        }
      } else if (!isdigit(c)) {
-       return (mk_symbol(sc, strlwr(q)));
+       return (mk_symbol(sc, str_to_maybe_lower(q)));
      }
 
      for ( ; (c = *p) != 0; ++p) {
@@ -1085,7 +1084,7 @@ static pointer mk_atom(scheme *sc, char *q) {
                           }
                        }
                }
-               return (mk_symbol(sc, strlwr(q)));
+               return (mk_symbol(sc, str_to_maybe_lower(q)));
           }
      }
      if(has_dec_point) {

@@ -17,12 +17,8 @@ extern "C" {
 #endif
 
 #ifndef _MSC_VER
-# ifndef USE_STRLWR
-#   define USE_STRLWR 1
-# endif
 # define SCHEME_EXPORT
 #else
-# define USE_STRLWR 0
 # ifdef _SCHEME_SOURCE
 #  define SCHEME_EXPORT __declspec(dllexport)
 # else
@@ -86,10 +82,6 @@ extern "C" {
 
 #ifndef USE_COLON_HOOK   /* Enable qualified qualifier */
 # define USE_COLON_HOOK 1
-#endif
-
-#ifndef USE_STRLWR
-# define USE_STRLWR 1
 #endif
 
 #ifndef STDIO_ADDS_CR    /* Define if DOS/Windows */
