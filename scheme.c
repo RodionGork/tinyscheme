@@ -1048,6 +1048,11 @@ static pointer mk_atom(scheme *sc, char *q) {
      p = q;
      c = *p++;
      if ((c == '+') || (c == '-')) {
+       if (str_eq(p, "inf.0")) {
+           return mk_real(sc, (c == '+' ? 1 : -1) / 0.0);
+       } else if (str_eq(p, "nan.0")) {
+           return mk_real(sc, 0 / 0.0);
+       }
        c = *p++;
        if (c == '.') {
          has_dec_point=1;
@@ -1871,7 +1876,7 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
               if(num_is_integer(l)) {
                    snprintf(p, STRBUFFSIZE, "%ld", ivalue_unchecked(l));
               } else {
-                   if (rvalue_unchecked(l) * 0.0 != 0.0) {
+                   if (rvalue_unchecked(l) * 0.0 != 0.0) { // is +/-inf or nan
                        if (rvalue_unchecked(l) > 0) {
                          snprintf(p, STRBUFFSIZE, "+inf");
                        } else if (rvalue_unchecked(l) < 0) {
