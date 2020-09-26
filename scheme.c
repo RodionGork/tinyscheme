@@ -57,6 +57,8 @@
  *  Basic memory allocation units
  */
 
+#define OBJ_LIST_SIZE 461
+
 #define banner "TinyScheme 1.42"
 
 #include <string.h>
@@ -815,13 +817,11 @@ pointer _cons(scheme *sc, pointer a, pointer b, int immutable) {
 
 /* ========== oblist implementation  ========== */
 
-#ifndef USE_OBJECT_LIST
-
 static int hash_fn(const char *key, int table_size);
 
 static pointer oblist_initial_value(scheme *sc)
 {
-  return mk_vector(sc, 461); /* probably should be bigger */
+  return mk_vector(sc, OBJ_LIST_SIZE);
 }
 
 /* returns the new symbol */
@@ -869,46 +869,6 @@ static pointer oblist_all_symbols(scheme *sc)
   }
   return ob_list;
 }
-
-#else
-
-static pointer oblist_initial_value(scheme *sc)
-{
-  return sc->NIL;
-}
-
-static INLINE pointer oblist_find_by_name(scheme *sc, const char *name)
-{
-     pointer x;
-     char    *s;
-
-     for (x = sc->oblist; x != sc->NIL; x = cdr(x)) {
-        s = symname(car(x));
-        /* case-insensitive, per R5RS section 2. */
-        if(str_eq(name, s)) {
-          return car(x);
-        }
-     }
-     return sc->NIL;
-}
-
-/* returns the new symbol */
-static pointer oblist_add_by_name(scheme *sc, const char *name)
-{
-  pointer x;
-
-  x = immutable_cons(sc, mk_string(sc, name), sc->NIL);
-  typeflag(x) = T_SYMBOL;
-  setimmutable(car(x));
-  sc->oblist = immutable_cons(sc, x, sc->oblist);
-  return x;
-}
-static pointer oblist_all_symbols(scheme *sc)
-{
-  return sc->oblist;
-}
-
-#endif
 
 static pointer mk_port(scheme *sc, port *p) {
   pointer x = get_cell(sc, sc->NIL, sc->NIL);
@@ -5051,8 +5011,3 @@ int main(int argc, char **argv) {
 
 #endif
 
-/*
-Local variables:
-c-file-style: "k&r"
-End:
-*/
