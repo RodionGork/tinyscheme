@@ -31,12 +31,6 @@
 #include <float.h>
 #include <ctype.h>
 
-#if USE_STRCASECMP
-#include <strings.h>
-# if !defined(__APPLE__) || defined(OSX)
-#  define stricmp strcasecmp
-# endif
-#endif
 
 /* Used for documentation purposes, to signal functions in 'interface' */
 #define INTERFACE
@@ -68,22 +62,34 @@
 #include <string.h>
 #include <stdlib.h>
 
-#if defined(__APPLE__) && !defined(OSX)
-static int stricmp(const char *s1, const char *s2)
+#if CASE_SENSITIVE
+#define str_eq_to_lower(X,Y) (!strcmp((X),(Y)))
+#define str_eq(X,Y) (!strcmp((X),(Y)))
+#else
+
+static int str_eq_to_lower(const char *s1, const char *s2)
 {
-  unsigned char c1, c2;
-  do {
-    c1 = tolower(*s1);
-    c2 = tolower(*s2);
-    if (c1 < c2)
-      return -1;
-    else if (c1 > c2)
-      return 1;
+  while (*s1) {
+    if (tolower(*s1) != (*s2)) {
+      return 0;
+    }
     s1++, s2++;
-  } while (c1 != 0);
-  return 0;
+  }
+  return (*s2 == 0);
 }
-#endif /* __APPLE__ && !OSX */
+
+static int str_eq(const char *s1, const char *s2)
+{
+  while (*s1) {
+    if (tolower(*s1) != tolower(*s2)) {
+      return 0;
+    }
+    s1++, s2++;
+  }
+  return (*s2 == 0);
+}
+
+#endif // CASE_SENSITIVE
 
 #if USE_STRLWR
 static const char *strlwr(char *s) {
@@ -308,12 +314,12 @@ static const char *charnames[32]={
 static int is_ascii_name(const char *name, int *pc) {
   int i;
   for(i=0; i<32; i++) {
-     if(stricmp(name,charnames[i])==0) {
+     if(str_eq_to_lower(name,charnames[i])) {
           *pc=i;
           return 1;
      }
   }
-  if(stricmp(name,"del")==0) {
+  if(str_eq_to_lower(name,"del")) {
      *pc=127;
      return 1;
   }
@@ -327,7 +333,6 @@ static void file_pop(scheme *sc);
 static int file_interactive(scheme *sc);
 static INLINE int is_one_of(char *s, int c);
 static int alloc_cellseg(scheme *sc, int n);
-static long binary_decode(const char *s);
 static INLINE pointer get_cell(scheme *sc, pointer a, pointer b);
 static pointer _get_cell(scheme *sc, pointer a, pointer b);
 static pointer reserve_cells(scheme *sc, int n);
@@ -547,18 +552,6 @@ static double round_per_R5RS(double x) {
  }
 }
 #endif
-
-static long binary_decode(const char *s) {
- long x=0;
-
- while(*s!=0 && (*s=='1' || *s=='0')) {
-     x<<=1;
-     x+=*s-'0';
-     s++;
- }
-
- return x;
-}
 
 /* allocate new cell segment */
 static int alloc_cellseg(scheme *sc, int n) {
@@ -856,8 +849,7 @@ static INLINE pointer oblist_find_by_name(scheme *sc, const char *name)
   location = hash_fn(name, ivalue_unchecked(sc->oblist));
   for (x = vector_elem(sc->oblist, location); x != sc->NIL; x = cdr(x)) {
     s = symname(car(x));
-    /* case-insensitive, per R5RS section 2. */
-    if(stricmp(name, s) == 0) {
+    if(str_eq_to_lower(name, s)) {
       return car(x);
     }
   }
@@ -893,7 +885,7 @@ static INLINE pointer oblist_find_by_name(scheme *sc, const char *name)
      for (x = sc->oblist; x != sc->NIL; x = cdr(x)) {
         s = symname(car(x));
         /* case-insensitive, per R5RS section 2. */
-        if(stricmp(name, s) == 0) {
+        if(str_eq(name, s)) {
           return car(x);
         }
      }
@@ -1142,38 +1134,22 @@ static pointer mk_atom(scheme *sc, char *q) {
      return (mk_integer(sc, atol(q)));
 }
 
-/* make constant */
 static pointer mk_sharp_const(scheme *sc, char *name) {
-     long    x;
-     char    tmp[STRBUFFSIZE];
-
-     if (!strcmp(name, "t"))
+     if (str_eq_to_lower(name, "t")) {
           return (sc->T);
-     else if (!strcmp(name, "f"))
+     } else if (str_eq_to_lower(name, "f")) {
           return (sc->F);
-     else if (*name == 'o') {/* #o (octal) */
-          snprintf(tmp, STRBUFFSIZE, "0%s", name+1);
-          sscanf(tmp, "%lo", (long unsigned *)&x);
-          return (mk_integer(sc, x));
-     } else if (*name == 'd') {    /* #d (decimal) */
-          sscanf(name+1, "%ld", (long int *)&x);
-          return (mk_integer(sc, x));
      } else if (*name == 'x') {    /* #x (hex) */
-          snprintf(tmp, STRBUFFSIZE, "0x%s", name+1);
-          sscanf(tmp, "%lx", (long unsigned *)&x);
-          return (mk_integer(sc, x));
-     } else if (*name == 'b') {    /* #b (binary) */
-          x = binary_decode(name+1);
-          return (mk_integer(sc, x));
+          return (mk_integer(sc, strtol(name + 1, 0, 16)));
      } else if (*name == '\\') { /* #\w (character) */
           int c=0;
-          if(stricmp(name+1,"space")==0) {
+          if(str_eq_to_lower(name+1,"space")) {
                c=' ';
-          } else if(stricmp(name+1,"newline")==0) {
+          } else if(str_eq_to_lower(name+1,"newline")) {
                c='\n';
-          } else if(stricmp(name+1,"return")==0) {
+          } else if(str_eq_to_lower(name+1,"return")) {
                c='\r';
-          } else if(stricmp(name+1,"tab")==0) {
+          } else if(str_eq_to_lower(name+1,"tab")) {
                c='\t';
      } else if(name[1]=='x' && name[2]!=0) {
           int c1=0;
@@ -4997,7 +4973,7 @@ int main(int argc, char **argv) {
   if(argc==1) {
     printf(banner);
   }
-  if(argc==2 && strcmp(argv[1],"-?")==0) {
+  if(argc==2 && str_eq(argv[1],"-?")) {
     printf("Usage: tinyscheme -?\n");
     printf("or:    tinyscheme [<file1> <file2> ...]\n");
     printf("followed by\n");
@@ -5024,13 +5000,13 @@ int main(int argc, char **argv) {
     }
   }
   do {
-    if(strcmp(file_name,"-")==0) {
+    if(str_eq(file_name,"-")) {
       fin=stdin;
-    } else if(strcmp(file_name,"-1")==0 || strcmp(file_name,"-c")==0) {
+    } else if(str_eq(file_name,"-1") || str_eq(file_name,"-c")) {
       pointer args=sc.NIL;
       isfile=file_name[1]=='1';
       file_name=*argv++;
-      if(strcmp(file_name,"-")==0) {
+      if(str_eq(file_name,"-")) {
         fin=stdin;
       } else if(isfile) {
         fin=fopen(file_name,"r");

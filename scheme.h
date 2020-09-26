@@ -17,13 +17,11 @@ extern "C" {
 #endif
 
 #ifndef _MSC_VER
-# define USE_STRCASECMP 1
 # ifndef USE_STRLWR
 #   define USE_STRLWR 1
 # endif
 # define SCHEME_EXPORT
 #else
-# define USE_STRCASECMP 0
 # define USE_STRLWR 0
 # ifdef _SCHEME_SOURCE
 #  define SCHEME_EXPORT __declspec(dllexport)
@@ -31,6 +29,8 @@ extern "C" {
 #  define SCHEME_EXPORT __declspec(dllimport)
 # endif
 #endif
+
+#define CASE_SENSITIVE 1
 
 #if USE_NO_FEATURES
 # define USE_MATH 0
@@ -86,10 +86,6 @@ extern "C" {
 
 #ifndef USE_COLON_HOOK   /* Enable qualified qualifier */
 # define USE_COLON_HOOK 1
-#endif
-
-#ifndef USE_STRCASECMP   /* stricmp for Unix */
-# define USE_STRCASECMP 0
 #endif
 
 #ifndef USE_STRLWR
