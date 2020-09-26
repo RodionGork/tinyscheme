@@ -1871,7 +1871,17 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
               if(num_is_integer(l)) {
                    snprintf(p, STRBUFFSIZE, "%ld", ivalue_unchecked(l));
               } else {
-                   snprintf(p, STRBUFFSIZE, "%.10g", rvalue_unchecked(l));
+                   if (rvalue_unchecked(l) * 0.0 != 0.0) {
+                       if (rvalue_unchecked(l) > 0) {
+                         snprintf(p, STRBUFFSIZE, "+inf");
+                       } else if (rvalue_unchecked(l) < 0) {
+                         snprintf(p, STRBUFFSIZE, "-inf");
+                       } else {
+                         snprintf(p, STRBUFFSIZE, "+nan");
+                       }
+                   } else {
+                       snprintf(p, STRBUFFSIZE, "%.10g", rvalue_unchecked(l));
+                   }
                    /* r5rs says there must be a '.' (unless 'e'?) */
                    f = strcspn(p, ".e");
                    if (p[f] == 0) {
