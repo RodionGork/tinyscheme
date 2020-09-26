@@ -31,7 +31,6 @@ extern "C" {
 #if USE_NO_FEATURES
 # define USE_MATH 0
 # define USE_CHAR_CLASSIFIERS 0
-# define USE_ASCII_NAMES 0
 # define USE_STRING_PORTS 0
 # define USE_ERROR_HOOK 0
 # define USE_TRACING 0
@@ -57,10 +56,6 @@ extern "C" {
 
 #ifndef USE_CHAR_CLASSIFIERS  /* If char classifiers are needed */
 # define USE_CHAR_CLASSIFIERS 1
-#endif
-
-#ifndef USE_ASCII_NAMES  /* If extended escaped characters are needed */
-# define USE_ASCII_NAMES 1
 #endif
 
 #ifndef USE_STRING_PORTS      /* Enable string ports */
