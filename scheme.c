@@ -1050,8 +1050,6 @@ static pointer mk_sharp_const(scheme *sc, char *name) {
           return (sc->T);
      } else if (str_eq_to_lower(name, "f")) {
           return (sc->F);
-     } else if (*name == 'x') {    /* #x (hex) */
-          return (mk_integer(sc, strtol(name + 1, 0, 16)));
      } else if (*name == '\\') { /* #\w (character) */
           int c=0;
           if(str_eq_to_lower(name+1,"space")) {
@@ -1062,21 +1060,30 @@ static pointer mk_sharp_const(scheme *sc, char *name) {
                c='\r';
           } else if(str_eq_to_lower(name+1,"tab")) {
                c='\t';
-     } else if(name[1]=='x' && name[2]!=0) {
-          int c1=0;
-          if(sscanf(name+2,"%x",(unsigned int *)&c1)==1 && c1 < UCHAR_MAX) {
-               c=c1;
-          } else {
-               return sc->NIL;
-     }
+          } else if(name[1]=='x' && name[2]!=0) {
+               int c1=0;
+               if(sscanf(name+2,"%x",(unsigned int *)&c1)==1 && c1 < UCHAR_MAX) {
+                   c=c1;
+               } else {
+                   return sc->NIL;
+               }
           } else if(name[2]==0) {
                c=name[1];
           } else {
                return sc->NIL;
           }
           return mk_character(sc,c);
-     } else
+     } else if (*name == 'x') {    /* #x (hex) */
+          return (mk_integer(sc, strtol(name + 1, 0, 16)));
+     } else if (*name == 'b') {    /* #b (bin) */
+          return (mk_integer(sc, strtol(name + 1, 0, 2)));
+     } else if (*name == 'o') {    /* #o (oct) */
+          return (mk_integer(sc, strtol(name + 1, 0, 8)));
+     } else if (*name == 'd') {    /* #d (dec) */
+          return (mk_integer(sc, strtol(name + 1, 0, 10)));
+     } else {
           return (sc->NIL);
+     }
 }
 
 /* ========== garbage collector ========== */
