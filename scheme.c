@@ -1175,7 +1175,7 @@ static pointer mk_sharp_const(scheme * sc, char *name) {
     }
     else if (name[1] == 'x' && name[2] != 0) {
       int c1 = 0;
-      if (sscanf(name + 2, "%x", (unsigned int *) &c1) == 1 && c1 < UCHAR_MAX) {
+      if (sscanf(name + 2, "%x", (unsigned int *) &c1) == 1) {
         c = c1;
       }
       else {
@@ -1900,6 +1900,32 @@ static int token(scheme * sc) {
 /* ========== Routines for Printing ========== */
 #define   ok_abbrev(x)   (is_pair(x) && cdr(x) == sc->NIL)
 
+static void char_to_utf8(int c, char *p, int *plen) {
+    unsigned char *s = (unsigned char*) p;
+    int bytes;
+    if (c < 0 || c > 0x10FFFF) {
+        c = '?';
+    }
+    if (c < 0x80) {
+        *s++ = (unsigned char) c;
+        *s = 0;
+    } else {
+        bytes = (c < 0x800) ? 2 : ((c < 0x10000) ? 3 : 4);
+        s[bytes] = 0;
+        s[0] = 0x80;
+        while (--bytes) {
+            s[0] |= (0x80 >> bytes);
+            s[bytes] = (unsigned char) (0x80 | (c & 0x3F));
+            c >>= 6;
+        }
+        s[0] |= (unsigned char) c;
+    }
+    *plen = strlen(p);
+    for (s = (unsigned char*) p; *s; s++) {
+        printf("CODE: %02X\n", *s);
+    }
+}
+
 static void printslashstring(scheme * sc, char *p, int len) {
   int i;
   unsigned char *s = (unsigned char *) p;
@@ -2053,8 +2079,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     int c = charvalue(l);
     p = sc->strbuff;
     if (!f) {
-      p[0] = c;
-      *plen = 1;
+      char_to_utf8(c, p, plen);
     }
     else {
       switch (c) {
@@ -2071,7 +2096,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
         p = "#\\tab";
         break;
       default:
-        if (c < 32) {
+        if (c < 32 || c >= 0x80) {
           snprintf(p, STRBUFFSIZE, "#\\x%x", c);
           break;
         }
