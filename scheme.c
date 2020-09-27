@@ -878,7 +878,7 @@ static char *store_string(scheme *sc, int len_str, const char *str, char fill) {
           return sc->strbuff;
      }
      if(str!=0) {
-          snprintf(q, len_str+1, "%s", str);
+          memcpy(q, str, len_str);
      } else {
           memset(q, fill, len_str);
           q[len_str]=0;
@@ -892,6 +892,7 @@ INTERFACE pointer mk_string(scheme *sc, const char *str) {
 }
 
 INTERFACE pointer mk_counted_string(scheme *sc, const char *str, int len) {
+printf("MKCOUNTED: %d\n", len);
      pointer x = get_cell(sc, sc->NIL, sc->NIL);
      typeflag(x) = (T_STRING | T_ATOM);
      strvalue(x) = store_string(sc,len,str,0);
@@ -1809,7 +1810,8 @@ static void printatom(scheme *sc, pointer l, int f) {
 /* Uses internal buffer unless string pointer is already available */
 static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
      char *p;
-
+     
+     *plen = -1;
      if (l == sc->NIL) {
           p = "()";
      } else if (l == sc->T) {
@@ -1868,6 +1870,7 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
      } else if (is_string(l)) {
           if (!f) {
                p = strvalue(l);
+               *plen = strlength(l);
           } else { /* Hack, uses the fact that printing is needed */
                *pp=sc->strbuff;
                *plen=0;
@@ -1879,7 +1882,7 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
           p = sc->strbuff;
           if (!f) {
                p[0]=c;
-               p[1]=0;
+               *plen = 1;
           } else {
                switch(c) {
                case ' ':
@@ -1923,7 +1926,9 @@ static void atom2str(scheme *sc, pointer l, int f, char **pp, int *plen) {
           p = "#<ERROR>";
      }
      *pp=p;
-     *plen=strlen(p);
+     if (*plen < 0) {
+         *plen=strlen(p);
+     }
 }
 /* ========== Routines for Evaluation Cycle ========== */
 
@@ -3865,7 +3870,7 @@ static pointer opexe_4(scheme *sc, enum scheme_opcodes op) {
 
                     memcpy(str,p->rep.string.start,size-1);
                     str[size-1]='\0';
-                    s=mk_string(sc,str);
+                    s=mk_counted_string(sc,str,size-1);
                     sc->free(str);
                     s_return(sc,s);
                }
