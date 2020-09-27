@@ -1522,6 +1522,24 @@ static void port_close(scheme * sc, pointer p, int flag) {
   }
 }
 
+static int utf8_inchar(port * pt) {
+    int c = basic_inchar(pt), c1;
+    int bytes;
+    if (c == EOF || c < 0x80) {
+        return c;
+    }
+    bytes = (c < 0xE0) ? 2 : ((c < 0xF0) ? 3 : 4);
+    c &= ((0x100 >> bytes) - 1);
+    while (--bytes) {
+        c1 = basic_inchar(pt);
+        if (c1 == EOF) {
+            return EOF;
+        }
+        c = (c << 6) | (c1 & 0x3F);
+    }
+    return c;
+}
+
 /* get new character from input file */
 static int inchar(scheme * sc) {
   int c;
@@ -1531,14 +1549,11 @@ static int inchar(scheme * sc) {
   if (pt->kind & port_saw_EOF) {
     return EOF;
   }
-  c = basic_inchar(pt);
+  c = utf8_inchar(pt);
   if (c == EOF && sc->inport == sc->loadport) {
     /* Instead, set port_saw_EOF */
     pt->kind |= port_saw_EOF;
-
-    /* file_pop(sc); */
     return EOF;
-    /* NOTREACHED */
   }
   return c;
 }
@@ -1921,9 +1936,6 @@ static void char_to_utf8(int c, char *p, int *plen) {
         s[0] |= (unsigned char) c;
     }
     *plen = strlen(p);
-    for (s = (unsigned char*) p; *s; s++) {
-        printf("CODE: %02X\n", *s);
-    }
 }
 
 static void printslashstring(scheme * sc, char *p, int len) {
