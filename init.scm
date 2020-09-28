@@ -281,6 +281,9 @@
                l
                (loop (pred n) (cons (vector-ref v n) l)))))
 
+(define (truncate x)
+     (if (> x 0) (floor x) (ceiling x)))
+
 ;; The following quasiquote macro is due to Eric S. Tiedemann.
 ;;   Copyright 1988 by Eric S. Tiedemann; all rights reserved.
 ;;

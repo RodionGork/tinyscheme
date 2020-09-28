@@ -3322,14 +3322,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       x = car(sc->args);
       if (num_is_integer(x) && num_is_integer(y))
         real_result = 0;
-      /* This 'if' is an R5RS compatibility fix. */
-      /* NOTE: Remove this 'if' fix for R6RS.    */
-      if (rvalue(x) == 0 && rvalue(y) < 0) {
-        result = 0.0;
-      }
-      else {
-        result = pow(rvalue(x), rvalue(y));
-      }
+      result = pow(rvalue(x), rvalue(y));
       /* Before returning integer result make sure we can. */
       /* If the test fails, result is too big for integer. */
       if (!real_result) {
@@ -3352,18 +3345,6 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
   case OP_CEILING:
     x = car(sc->args);
     s_return(sc, mk_real(sc, ceil(rvalue(x))));
-
-  case OP_TRUNCATE:{
-      double rvalue_of_x;
-      x = car(sc->args);
-      rvalue_of_x = rvalue(x);
-      if (rvalue_of_x > 0) {
-        s_return(sc, mk_real(sc, floor(rvalue_of_x)));
-      }
-      else {
-        s_return(sc, mk_real(sc, ceil(rvalue_of_x)));
-      }
-    }
 
   case OP_ROUND:
     x = car(sc->args);

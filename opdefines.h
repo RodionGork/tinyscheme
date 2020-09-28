@@ -69,7 +69,6 @@ _OP_DEF(opexe_0, "load", 1, 1, TST_STRING, OP_LOAD)
     _OP_DEF(opexe_2, "expt", 2, 2, TST_NUMBER, OP_EXPT)
     _OP_DEF(opexe_2, "floor", 1, 1, TST_NUMBER, OP_FLOOR)
     _OP_DEF(opexe_2, "ceiling", 1, 1, TST_NUMBER, OP_CEILING)
-    _OP_DEF(opexe_2, "truncate", 1, 1, TST_NUMBER, OP_TRUNCATE)
     _OP_DEF(opexe_2, "round", 1, 1, TST_NUMBER, OP_ROUND)
 #endif
     _OP_DEF(opexe_2, "+", 0, INF_ARG, TST_NUMBER, OP_ADD)
