@@ -1937,6 +1937,35 @@ static void char_to_utf8(int c, char *p, int *plen) {
     *plen = strlen(p);
 }
 
+void long_to_str(long v, char *s, int base) {
+  char *p;
+  char c;
+  if (v < 0) {
+    *s++ = '-';
+    v = -v;
+  }
+  p = s;
+  if (v == 0) {
+    *s++ = '0';
+  }
+  while (v > 0) {
+    c = (char) (v % base);
+    v /= base;
+    if (c < 10) {
+      c += '0';
+    } else {
+      c += 'A' - 10;
+    }
+    *s++ = c;
+  }
+  *s-- = '\0';
+  while (s > p) {
+    c = *p;
+    *p++ = *s;
+    *s-- = c;
+  }
+}
+
 static void printslashstring(scheme * sc, char *p, int len) {
   int i;
   unsigned char *s = (unsigned char *) p;
@@ -2049,28 +2078,10 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     }
     else {
       long v = ivalue(l);
-      if (f == 16) {
-        if (v >= 0)
-          snprintf(p, STRBUFFSIZE, "%lx", v);
-        else
-          snprintf(p, STRBUFFSIZE, "-%lx", -v);
-      }
-      else if (f == 8) {
-        if (v >= 0)
-          snprintf(p, STRBUFFSIZE, "%lo", v);
-        else
-          snprintf(p, STRBUFFSIZE, "-%lo", -v);
-      }
-      else if (f == 2) {
-        unsigned long b = (v < 0) ? -v : v;
-        p = &p[STRBUFFSIZE - 1];
-        *p = 0;
-        do {
-          *--p = (b & 1) ? '1' : '0';
-          b >>= 1;
-        } while (b != 0);
-        if (v < 0)
-          *--p = '-';
+      if (f >= 2 && f <= 36) {
+        long_to_str(v, p, f);
+      } else {
+        *p = '\0';
       }
     }
   }
@@ -3488,10 +3499,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
         /* we know cadr(sc->args) is a natural number */
         /* see if it is 2, 8, 10, or 16, or error */
         pf = ivalue_unchecked(cadr(sc->args));
-        if (pf == 16 || pf == 10 || pf == 8 || pf == 2) {
-          /* base is OK */
-        }
-        else {
+        if (pf < 2 || pf > 36) {
           pf = -1;
         }
       }
@@ -3532,7 +3540,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
         /* see if it is 2, 8, 10, or 16, or error */
         y = car(y);
         pf = ivalue_unchecked(y);
-        if (!is_number(x) || !(pf == 16 || pf == 10 || pf == 8 || pf == 2)) {
+        if (!is_number(x) || pf < 2 || pf > 36) {
           pf = -1;
         }
       }
