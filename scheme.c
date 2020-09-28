@@ -3253,7 +3253,7 @@ static pointer opexe_1(scheme * sc, enum scheme_opcodes op) {
 }
 
 static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
-  pointer x;
+  pointer x, y;
   num v;
 #if USE_MATH
   double dd;
@@ -3307,7 +3307,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       s_return(sc, mk_real(sc, atan(rvalue(x))));
     }
     else {
-      pointer y = cadr(sc->args);
+      y = cadr(sc->args);
       s_return(sc, mk_real(sc, atan2(rvalue(x), rvalue(y))));
     }
 
@@ -3318,8 +3318,8 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
   case OP_EXPT:{
       double result;
       int real_result = 1;
-      pointer y = cadr(sc->args);
       x = car(sc->args);
+      y = cadr(sc->args);
       if (num_is_integer(x) && num_is_integer(y))
         real_result = 0;
       result = pow(rvalue(x), rvalue(y));
@@ -3527,19 +3527,15 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
   case OP_ATOM2STR:            /* atom->string */  {
       long pf = 0;
       x = car(sc->args);
-      if (cdr(sc->args) != sc->NIL) {
+      y = cdr(sc->args);
+      if (y != sc->NIL) {
         /* we know cadr(sc->args) is a natural number */
         /* see if it is 2, 8, 10, or 16, or error */
-        pf = ivalue_unchecked(cadr(sc->args));
-        if (is_number(x) && (pf == 16 || pf == 10 || pf == 8 || pf == 2)) {
-          /* base is OK */
-        }
-        else {
+        pf = ivalue_unchecked(car(y));
+        if (!is_number(x) || !(pf == 16 || pf == 10 || pf == 8 || pf == 2)) {
+          Error_1(sc, "atom->string: bad base:", cadr(sc->args));
           pf = -1;
         }
-      }
-      if (pf < 0) {
-        Error_1(sc, "atom->string: bad base:", cadr(sc->args));
       }
       else if (is_number(x) || is_character(x) || is_string(x)
           || is_symbol(x)) {
@@ -3570,7 +3566,6 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
 
   case OP_STRREF:{             /* string-ref */
       char *str;
-      pointer x;
       int index;
 
       str = strvalue(car(sc->args));
@@ -3590,30 +3585,29 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
 
   case OP_STRSET:{             /* string-set! */
       char *str;
-      pointer x;
       int index;
       int c;
 
-      if (is_immutable(car(sc->args))) {
-        Error_1(sc, "string-set!: unable to alter immutable string:",
-            car(sc->args));
+      x = car(sc->args);
+      if (is_immutable(x)) {
+        Error_1(sc, "string-set!: unable to alter immutable string:", x);
       }
-      str = strvalue(car(sc->args));
+      str = strvalue(x);
 
-      x = cadr(sc->args);
-      if (!is_integer(x)) {
-        Error_1(sc, "string-set!: index must be exact:", x);
+      y = cadr(sc->args);
+      if (!is_integer(y)) {
+        Error_1(sc, "string-set!: index must be exact:", y);
       }
 
-      index = ivalue(x);
+      index = ivalue(y);
       if (index >= strlength(car(sc->args))) {
-        Error_1(sc, "string-set!: out of bounds:", x);
+        Error_1(sc, "string-set!: out of bounds:", y);
       }
 
       c = charvalue(caddr(sc->args));
 
       str[index] = (char) c;
-      s_return(sc, car(sc->args));
+      s_return(sc, x);
     }
 
   case OP_STRAPPEND:{          /* string-append */
@@ -3708,7 +3702,6 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
     s_return(sc, mk_integer(sc, ivalue(car(sc->args))));
 
   case OP_VECREF:{             /* vector-ref */
-      pointer x;
       int index;
 
       x = cadr(sc->args);
@@ -3725,7 +3718,6 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
     }
 
   case OP_VECSET:{             /* vector-set! */
-      pointer x;
       int index;
 
       if (is_immutable(car(sc->args))) {
