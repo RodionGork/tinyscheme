@@ -1,3 +1,5 @@
+; remade from Chibi Scheme "r5rs-tests.scm"
+
 (eqv? 2 2.0)
 #f
 

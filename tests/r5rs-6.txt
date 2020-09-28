@@ -1,0 +1,85 @@
+; remade from Chibi Scheme "r5rs-tests.scm"
+
+(vector->list '#(dah dah didah))
+(dah dah didah)
+
+(list->vector '(dididit dah))
+#(dididit dah)
+
+(procedure? car)
+#t
+
+(procedure? 'car)
+#f
+
+(procedure? (lambda (x) (* x x)))
+#t
+
+(procedure? '(lambda (x) (* x x)))
+#f
+
+(call-with-current-continuation procedure?)
+#t
+
+(call-with-current-continuation (lambda (k) (+ 2 5)))
+7
+
+(call-with-current-continuation (lambda (k) (+ 2 5 (k 3))))
+3
+
+(apply + (list 3 4))
+7
+
+(map cadr '((a b) (d e) (g h)))
+(b e h)
+
+(map (lambda (n) (expt n n)) '(1 2 3 4 5))
+(1 4 27 256 3125)
+
+(map + '(1 2 3) '(4 5 6))
+(5 7 9)
+
+(let ((v (make-vector 5))) (for-each (lambda (i) (vector-set! v i (* i i))) '(0 1 2 3 4)) v)
+#(0 1 4 9 16)
+
+(force (delay (+ 1 2)))
+3
+
+(let ((p (delay (+ 1 2)))) (list (force p) (force p)))
+(3 3)
+
+(let ((else 1)) (cond (else 'ok) (#t 'bad)))
+ok
+
+; (let ((=> 1)) (cond (#t => 'ok)))
+; ok
+
+; (let ((unquote 1)) `(,foo))
+; (,foo)
+
+; (let ((unquote-splicing 1)) `(,@foo))
+; (,@foo)
+
+; (let ((... 2)) (let-syntax ((s (syntax-rules () ((_ x ...) 'bad) ((_ . r) 'ok)))) (s a b c)))
+; ok
+
+; (let () (let-syntax () (define internal-def 'ok)) internal-def)
+; ok
+
+; (let () (letrec-syntax () (define internal-def 'ok)) internal-def))
+; ok
+
+((lambda () (let ((x 1)) (let ((y x)) (set! x 2) (list x y)))))
+(2 1)
+
+((lambda () (let ((x 1)) (set! x 2) (let ((y x)) (list x y)))))
+(2 2)
+
+((lambda () (let ((x 1)) (let ((y x)) (set! y 2) (list x y)))))
+(1 2)
+
+((lambda () (let ((x 1)) (let ((y x)) (set! x 2) (set! y 3) (list x y)))))
+(2 3)
+
+(let* ((path '()) (add (lambda (s) (set! path (cons s path))))) (dynamic-wind (lambda () (add 'a)) (lambda () (add 'b)) (lambda () (add 'c))) (reverse path))
+(a b c)

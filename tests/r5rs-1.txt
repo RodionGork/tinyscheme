@@ -1,3 +1,5 @@
+; remade from Chibi Scheme "r5rs-tests.scm"
+
 ((lambda (x) (+ x x)) 4)
 8
 
