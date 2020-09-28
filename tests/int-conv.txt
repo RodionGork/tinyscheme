@@ -1,0 +1,5 @@
+(list (atom->string 15 3) (atom->string 27 16) (atom->string -30 8))
+(120 1B -36)
+
+(list (string->atom "101" 3) (string->atom "101" 20) (string->atom "-1B" 16))
+(10 401 -27)

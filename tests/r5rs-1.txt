@@ -1,0 +1,63 @@
+((lambda (x) (+ x x)) 4)
+8
+
+((lambda x x) 3 4 5 6)
+(3 4 5 6)
+
+((lambda (x y . z) z) 3 4 5 6)
+(5 6)
+
+(if (> 3 2) 'yes 'no)
+yes
+
+(if (> 2 3) 'yes 'no)
+no
+
+(if (> 3 2) (- 3 2) (+ 3 2))
+1
+
+(cond ((> 3 2) 'greater) ((< 3 2) 'less))
+greater
+
+(cond ((> 3 3) 'greater) ((< 3 3) 'less) (else 'equal))
+equal
+
+(case (* 2 3) ((2 3 5 7) 'prime) ((1 4 6 8 9) 'composite))
+composite
+
+(case (car '(c d)) ((a e i o u) 'vowel) ((w y) 'semivowel) (else 'consonant))
+consonant
+
+(and (= 2 2) (> 2 1))
+#t
+
+(and (= 2 2) (< 2 1))
+#f
+
+(and 1 2 'c '(f g))
+(f g)
+
+(and)
+#t
+
+(or (= 2 2) (> 2 1))
+#t
+
+(or (= 2 2) (< 2 1))
+#t
+
+(or (memq 'b '(a b c)) (/ 3 0))
+(b c)
+
+(let ((x 2) (y 3)) (* x y))
+6
+
+(let ((x 2) (y 3)) (let ((x 7) (z (+ x y))) (* z x)))
+35
+
+(let ((x 2) (y 3)) (let* ((x 7) (z (+ x y))) (* z x)))
+70
+
+(let () (define x 2) (define f (lambda () (- x))) (f))
+-2
+

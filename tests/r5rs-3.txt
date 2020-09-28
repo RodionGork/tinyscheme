@@ -1,0 +1,84 @@
+(do ((vec (make-vector 5)) (i 0 (+ i 1))) ((= i 5) vec) (vector-set! vec i i))
+#(0 1 2 3 4)
+
+(let ((x '(1 3 5 7 9))) (do ((x x (cdr x)) (sum 0 (+ sum (car x)))) ((null? x) sum)))
+25
+
+`(list ,(+ 1 2) 4)
+(list 3 4)
+
+(let ((name 'a)) `(list ,name ',name))
+(list a 'a)
+
+`(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b)
+(a 3 4 5 6 b)
+
+`(10 5 ,(expt 2 2) ,@(map (lambda (n) (expt n 2)) '(4 3)) 8)
+(10 5 4 16 9 8)
+
+`(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f)
+(a `(b ,(+ 1 2) ,(foo 4 d) e) f)
+
+(let ((name1 'x) (name2 'y)) `(a `(b ,,name1 ,',name2 d) e))
+(a `(b ,x ,'y d) e)
+
+(quasiquote (list (unquote (+ 1 2)) 4))
+(list 3 4)
+
+(eqv? 'a 'a)
+#t
+
+(eqv? 'a 'b)
+#f
+
+(eqv? '() '())
+#t
+
+(eqv? (cons 1 2) (cons 1 2))
+#f
+
+(eqv? (lambda () 1) (lambda () 2))
+#f
+
+(let ((p (lambda (x) x))) (eqv? p p))
+#t
+
+(eq? 'a 'a)
+#t
+
+(eq? (list 'a) (list 'a))
+#f
+
+(eq? '() '())
+#t
+
+(eq? car car)
+#t
+
+(let ((x '(a))) (eq? x x))
+#t
+
+(let ((p (lambda (x) x))) (eq? p p))
+#t
+
+(equal? 'a 'a)
+#t
+
+(equal? '(a) '(a))
+#t
+
+(equal? '(a (b) c) '(a (b) c))
+#t
+
+(equal? "abc" "abc")
+#t
+
+(equal? "abc" "abcd")
+#f
+
+(equal? "a" "b")
+#f
+
+(equal? 2 2)
+#t
+

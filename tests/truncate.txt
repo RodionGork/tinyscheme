@@ -1,0 +1,2 @@
+(list (truncate 1.7) (truncate -2.8) (truncate 0) (truncate +inf.0) (truncate -inf.0) (truncate +nan.0))
+(1.0 -2.0 0.0 +inf.0 -inf.0 +nan.0)
