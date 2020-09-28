@@ -977,11 +977,10 @@ static char *store_string(scheme * sc, int len_str, const char *str,
   }
   if (str != 0) {
     memcpy(q, str, len_str);
-  }
-  else {
+  } else {
     memset(q, fill, len_str);
-    q[len_str] = 0;
   }
+  q[len_str] = 0;
   return (q);
 }
 
@@ -3531,20 +3530,21 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       if (y != sc->NIL) {
         /* we know cadr(sc->args) is a natural number */
         /* see if it is 2, 8, 10, or 16, or error */
-        pf = ivalue_unchecked(car(y));
+        y = car(y);
+        pf = ivalue_unchecked(y);
         if (!is_number(x) || !(pf == 16 || pf == 10 || pf == 8 || pf == 2)) {
-          Error_1(sc, "atom->string: bad base:", cadr(sc->args));
           pf = -1;
         }
       }
-      else if (is_number(x) || is_character(x) || is_string(x)
+      if (pf < 0) {
+          Error_1(sc, "atom->string: bad base:", y);
+      } else if (is_number(x) || is_character(x) || is_string(x)
           || is_symbol(x)) {
         char *p;
         int len;
         atom2str(sc, x, (int) pf, &p, &len);
         s_return(sc, mk_counted_string(sc, p, len));
-      }
-      else {
+      } else {
         Error_1(sc, "atom->string: not an atom:", x);
       }
     }
