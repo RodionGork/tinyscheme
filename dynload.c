@@ -110,19 +110,16 @@ pointer scm_load_ext(scheme * sc, pointer args) {
     dll_handle = dl_attach(filename);
     if (dll_handle == 0) {
       retval = sc->F;
-    }
-    else {
+    } else {
       module_init = (void (*)(scheme *)) dl_proc(dll_handle, init_fn);
       if (module_init != 0) {
         (*module_init) (sc);
         retval = sc->T;
-      }
-      else {
+      } else {
         retval = sc->F;
       }
     }
-  }
-  else {
+  } else {
     retval = sc->F;
   }
 
@@ -143,8 +140,7 @@ static void make_init_fn(const char *name, char *init_fn) {
   const char *p = strrchr(name, '/');
   if (p == 0) {
     p = name;
-  }
-  else {
+  } else {
     p++;
   }
   strcpy(init_fn, "init_");
