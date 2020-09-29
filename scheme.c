@@ -8,7 +8,7 @@
  */
 
 #define _SCHEME_SOURCE
-#include "scheme-private.h"
+#include "scm_priv.h"
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -1661,7 +1661,8 @@ static char *readstr_upto(scheme * sc, char *delim) {
   char *p = sc->strbuff;
 
   while ((p - sc->strbuff < sizeof(sc->strbuff)) &&
-      !is_one_of(delim, (*p++ = inchar(sc))));
+      !is_one_of(delim, (*p++ = inchar(sc)))) {
+  }
 
   if (p == sc->strbuff + 2 && p[-2] == '\\') {
     *p = 0;
@@ -1851,7 +1852,8 @@ static int token(scheme * sc) {
   case '\'':
     return (TOK_QUOTE);
   case ';':
-    while ((c = inchar(sc)) != '\n' && c != EOF);
+    while ((c = inchar(sc)) != '\n' && c != EOF) {
+    }
 
 #if SHOW_ERROR_LINE
     if (c == '\n' && sc->load_stack[sc->file_i].kind & port_file)
@@ -1882,7 +1884,8 @@ static int token(scheme * sc) {
       return (TOK_VEC);
     }
     else if (c == '!') {
-      while ((c = inchar(sc)) != '\n' && c != EOF);
+      while ((c = inchar(sc)) != '\n' && c != EOF) {
+      }
 
 #if SHOW_ERROR_LINE
       if (c == '\n' && sc->load_stack[sc->file_i].kind & port_file)
@@ -2055,13 +2058,13 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
       else {
         if (rvalue_unchecked(l) * 0.0 != 0.0) { // is +/-inf or nan
           if (rvalue_unchecked(l) > 0) {
-            snprintf(p, STRBUFFSIZE, "+inf");
+            strcpy(p, "+inf");
           }
           else if (rvalue_unchecked(l) < 0) {
-            snprintf(p, STRBUFFSIZE, "-inf");
+            strcpy(p, "-inf");
           }
           else {
-            snprintf(p, STRBUFFSIZE, "+nan");
+            strcpy(p, "+nan");
           }
         }
         else {
@@ -4620,7 +4623,7 @@ typedef struct {
 
 static op_code_info dispatch_table[] = {
 #define _OP_DEF(A,B,C,D,E,OP) {A,B,C,D,E},
-#include "opdefines.h"
+#include "scm_opdf.h"
   {0}
 };
 

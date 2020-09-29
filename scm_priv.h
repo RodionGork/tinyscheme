@@ -158,7 +158,7 @@ extern "C" {
 /* operator code */
   enum scheme_opcodes {
 #define _OP_DEF(A,B,C,D,E,OP) OP,
-#include "opdefines.h"
+#include "scm_opdf.h"
     OP_MAXDEFINED
   };
 
