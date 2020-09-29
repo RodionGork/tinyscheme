@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>js-dos 6.22, TinyScheme</title>
+  <script src="./js-dos.js"></script>
+  <style>
+    html, body, canvas, .dosbox-container {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="jsdos"></canvas>
+  <script>
+    var serverUrl = location.href;
+    if (/.*html$/.test(serverUrl)) {
+        serverUrl.substring(0, serverUrl.length - "index.html".length);
+    } else if (!/.*\/$/.test(serverUrl)) {
+        serverUrl += '/';
+    }
+    Dos(document.getElementById("jsdos"), {
+        wdosboxUrl: serverUrl + "wdosbox.js",
+        cycles: 'auto',
+        autolock: false,
+    }).ready(function (fs, main) {
+      fs.extract(serverUrl + "scheme.zip").then(function () {
+        main(["-c", "scheme.exe"]).then(function (ci) {
+            window.ci = ci;
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
