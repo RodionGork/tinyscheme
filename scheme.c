@@ -141,7 +141,6 @@ enum scheme_types {
 static num num_add(num a, num b);
 static num num_mul(num a, num b);
 static num num_div(num a, num b);
-static num num_intdiv(num a, num b);
 static num num_sub(num a, num b);
 static num num_rem(num a, num b);
 static num num_mod(num a, num b);
@@ -458,18 +457,6 @@ static num num_div(num a, num b) {
   return ret;
 }
 
-static num num_intdiv(num a, num b) {
-  num ret;
-  ret.is_fixnum = a.is_fixnum && b.is_fixnum;
-  if (ret.is_fixnum) {
-    ret.value.ivalue = a.value.ivalue / b.value.ivalue;
-  }
-  else {
-    ret.value.rvalue = num_rvalue(a) / num_rvalue(b);
-  }
-  return ret;
-}
-
 static num num_sub(num a, num b) {
   num ret;
   ret.is_fixnum = a.is_fixnum && b.is_fixnum;
@@ -517,7 +504,7 @@ static num num_mod(num a, num b) {
   e2 = num_ivalue(b);
   res = e1 % e2;
   /* modulo should have same sign as second operand */
-  if (res * e2 < 0) {
+  if ((res < 0) != (e2 < 0) && res) {
     res += e2;
   }
   if (ret.is_fixnum) {
@@ -3405,16 +3392,6 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
     }
     for (; x != sc->NIL; x = cdr(x)) {
       v = num_div(v, nvalue(car(x)));
-    }
-    s_return(sc, mk_number(sc, v));
-
-  case OP_INTDIV:              /* quotient */
-    v = nvalue(car(sc->args));
-    x = cadr(sc->args);
-    if (ivalue(x) != 0)
-      v = num_intdiv(v, nvalue(x));
-    else {
-      Error_0(sc, "quotient: division by zero");
     }
     s_return(sc, mk_number(sc, v));
 
