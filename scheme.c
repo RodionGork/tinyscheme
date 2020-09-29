@@ -1484,11 +1484,17 @@ static int utf8_inchar(port * pt) {
   return c;
 }
 
+int charstore = -1;
+
 /* get new character from input file */
 static int inchar(scheme * sc) {
   int c;
   port *pt;
-
+  if (charstore >= 0) {
+    c = charstore;
+    charstore = -1;
+    return c;
+  }
   pt = sc->inport->_object._port;
   if (pt->kind & port_saw_EOF) {
     return EOF;
@@ -1517,17 +1523,9 @@ static int basic_inchar(port * pt) {
 
 /* back character to input buffer */
 static void backchar(scheme * sc, int c) {
-  port *pt;
   if (c == EOF)
     return;
-  pt = sc->inport->_object._port;
-  if (pt->kind & port_file) {
-    ungetc(c, pt->rep.stdio.file);
-  } else {
-    if (pt->rep.string.curr != pt->rep.string.start) {
-      --pt->rep.string.curr;
-    }
-  }
+  charstore = c;
 }
 
 static int realloc_port_string(scheme * sc, port * p) {
@@ -1546,6 +1544,29 @@ static int realloc_port_string(scheme * sc, port * p) {
   } else {
     return 0;
   }
+}
+
+static void char_to_utf8(int c, char *p, int *plen) {
+  unsigned char *s = (unsigned char *) p;
+  int bytes;
+  if (c < 0 || c > 0x10FFFF) {
+    c = '?';
+  }
+  if (c < 0x80) {
+    *s++ = (unsigned char) c;
+    *s = 0;
+  } else {
+    bytes = (c < 0x800) ? 2 : ((c < 0x10000) ? 3 : 4);
+    s[bytes] = 0;
+    s[0] = 0x80;
+    while (--bytes) {
+      s[0] |= (0x80 >> bytes);
+      s[bytes] = (unsigned char) (0x80 | (c & 0x3F));
+      c >>= 6;
+    }
+    s[0] |= (unsigned char) c;
+  }
+  *plen = strlen(p);
 }
 
 INTERFACE void putstr(scheme * sc, const char *s) {
@@ -1594,9 +1615,15 @@ INTERFACE void putcharacter(scheme * sc, int c) {
 /* read characters up to delimiter, but cater to character constants */
 static char *readstr_upto(scheme * sc, char *delim) {
   char *p = sc->strbuff;
+  int c, len;
 
-  while ((p - sc->strbuff < sizeof(sc->strbuff)) &&
-      !is_one_of(delim, (*p++ = inchar(sc)))) {
+  while ((p - sc->strbuff < sizeof(sc->strbuff))) {
+    c = inchar(sc);
+    char_to_utf8(c, p, &len);
+    p += len;
+    if(is_one_of(delim, c)) {
+      break;
+    }
   }
 
   if (p == sc->strbuff + 2 && p[-2] == '\\') {
@@ -1611,7 +1638,7 @@ static char *readstr_upto(scheme * sc, char *delim) {
 /* read string expression "xxx...xxx" */
 static pointer readstrexp(scheme * sc) {
   char *p = sc->strbuff;
-  int c;
+  int c, len;
   int c1 = 0;
   enum { st_ok, st_bsl, st_x1, st_x2, st_oct1, st_oct2 } state = st_ok;
 
@@ -1630,7 +1657,8 @@ static pointer readstrexp(scheme * sc) {
         *p = 0;
         return mk_counted_string(sc, sc->strbuff, p - sc->strbuff);
       default:
-        *p++ = c;
+        char_to_utf8(c, p, &len);
+        p += len;
         break;
       }
       break;
@@ -1838,29 +1866,6 @@ static int token(scheme * sc) {
 
 /* ========== Routines for Printing ========== */
 #define   ok_abbrev(x)   (is_pair(x) && cdr(x) == sc->NIL)
-
-static void char_to_utf8(int c, char *p, int *plen) {
-  unsigned char *s = (unsigned char *) p;
-  int bytes;
-  if (c < 0 || c > 0x10FFFF) {
-    c = '?';
-  }
-  if (c < 0x80) {
-    *s++ = (unsigned char) c;
-    *s = 0;
-  } else {
-    bytes = (c < 0x800) ? 2 : ((c < 0x10000) ? 3 : 4);
-    s[bytes] = 0;
-    s[0] = 0x80;
-    while (--bytes) {
-      s[0] |= (0x80 >> bytes);
-      s[bytes] = (unsigned char) (0x80 | (c & 0x3F));
-      c >>= 6;
-    }
-    s[0] |= (unsigned char) c;
-  }
-  *plen = strlen(p);
-}
 
 void long_to_str(long v, char *s, int base) {
   char *p;
@@ -4080,18 +4085,6 @@ static pointer opexe_5(scheme * sc, enum scheme_opcodes op) {
     switch (sc->tok) {
     case TOK_EOF:
       s_return(sc, sc->EOF_OBJ);
-      /* NOTREACHED */
-/*
- * Commented out because we now skip comments in the scanner
- *
-          case TOK_COMMENT: {
-               int c;
-               while ((c=inchar(sc)) != '\n' && c!=EOF)
-                    ;
-               sc->tok = token(sc);
-               s_goto(sc,OP_RDSEXPR);
-          }
-*/
     case TOK_VEC:
       s_save(sc, OP_RDVEC, sc->NIL, sc->NIL);
       /* fall through */
@@ -4160,14 +4153,6 @@ static pointer opexe_5(scheme * sc, enum scheme_opcodes op) {
   case OP_RDLIST:{
       sc->args = cons(sc, sc->value, sc->args);
       sc->tok = token(sc);
-/* We now skip comments in the scanner
-          while (sc->tok == TOK_COMMENT) {
-               int c;
-               while ((c=inchar(sc)) != '\n' && c!=EOF)
-                    ;
-               sc->tok = token(sc);
-          }
-*/
       if (sc->tok == TOK_EOF) {
         s_return(sc, sc->EOF_OBJ);
       } else if (sc->tok == TOK_RPAREN) {
