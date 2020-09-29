@@ -1328,7 +1328,7 @@ static void gc(scheme * sc, pointer a, pointer b) {
 
   if (sc->gc_verbose) {
     char msg[80];
-    snprintf(msg, 80, "done: %ld cells were recovered.\n", sc->fcells);
+    sprintf(msg, "done: %ld cells were recovered.\n", sc->fcells);
     putstr(sc, msg);
   }
 }
@@ -2053,7 +2053,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     p = sc->strbuff;
     if (f <= 1 || f == 10) {    /* f is the base for numbers if > 1 */
       if (num_is_integer(l)) {
-        snprintf(p, STRBUFFSIZE, "%ld", ivalue_unchecked(l));
+        sprintf(p, "%ld", ivalue_unchecked(l));
       }
       else {
         if (rvalue_unchecked(l) * 0.0 != 0.0) { // is +/-inf or nan
@@ -2068,7 +2068,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
           }
         }
         else {
-          snprintf(p, STRBUFFSIZE, "%.10g", rvalue_unchecked(l));
+          sprintf(p, "%.10g", rvalue_unchecked(l));
         }
         /* r5rs says there must be a '.' (unless 'e'?) */
         f = strcspn(p, ".e");
@@ -2122,10 +2122,10 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
         break;
       default:
         if (c < 32 || c >= 0x80) {
-          snprintf(p, STRBUFFSIZE, "#\\x%x", c);
+          sprintf(p, "#\\x%x", c);
           break;
         }
-        snprintf(p, STRBUFFSIZE, "#\\%c", c);
+        sprintf(p, "#\\%c", c);
         break;
       }
     }
@@ -3035,7 +3035,7 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
       s_goto(sc, OP_BEGIN);
     }
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;
@@ -3259,7 +3259,7 @@ static pointer opexe_1(scheme * sc, enum scheme_opcodes op) {
     s_goto(sc, OP_APPLY);
 
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;
@@ -3751,7 +3751,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
     }
 
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;
@@ -3899,7 +3899,7 @@ static pointer opexe_3(scheme * sc, enum scheme_opcodes op) {
   case OP_EQV:                 /* eqv? */
     s_retbool(eqv(car(sc->args), cadr(sc->args)));
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;
@@ -4180,7 +4180,7 @@ static pointer opexe_4(scheme * sc, enum scheme_opcodes op) {
     s_return(sc, sc->envir);
 
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;
@@ -4495,7 +4495,7 @@ static pointer opexe_5(scheme * sc, enum scheme_opcodes op) {
     }
 
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
 
   }
@@ -4554,7 +4554,7 @@ static pointer opexe_6(scheme * sc, enum scheme_opcodes op) {
   case OP_MACROP:              /* macro? */
     s_retbool(is_macro(car(sc->args)));
   default:
-    snprintf(sc->strbuff, STRBUFFSIZE, "%d: illegal operator", sc->op);
+    sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
   }
   return sc->T;                 /* NOTREACHED */
