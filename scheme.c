@@ -338,21 +338,23 @@ INTERFACE INLINE void setimmutable(pointer p) {
 #define cadddr(p)        car(cdr(cdr(cdr(p))))
 #define cddddr(p)        cdr(cdr(cdr(cdr(p))))
 
+#define IS_ASCII(C) (((C) & ~0x7F) == 0)
+
 #if USE_CHAR_CLASSIFIERS
 static INLINE int Cisalpha(int c) {
-  return isalpha(c) && c < 0x80 && c >= 0;
+  return isalpha(c) && IS_ASCII(c);
 }
 static INLINE int Cisdigit(int c) {
-  return isdigit(c) && c < 0x80 && c >= 0;
+  return isdigit(c) && IS_ASCII(c);
 }
 static INLINE int Cisspace(int c) {
-  return isspace(c) && c < 0x80 && c >= 0;
+  return isspace(c) && IS_ASCII(c);
 }
 static INLINE int Cisupper(int c) {
-  return isupper(c) && c < 0x80 && c >= 0;
+  return isupper(c) && IS_ASCII(c);
 }
 static INLINE int Cislower(int c) {
-  return islower(c) && c < 0x80 && c >= 0;
+  return islower(c) && IS_ASCII(c);
 }
 #endif
 
@@ -371,7 +373,6 @@ static int count_consecutive_cells(pointer x, int needed);
 static pointer find_slot_in_env(scheme * sc, pointer env, pointer sym,
     int all);
 static pointer mk_number(scheme * sc, num n);
-static char *store_string(scheme * sc, int len, const char *str, char fill);
 static pointer mk_vector(scheme * sc, int len);
 static pointer mk_atom(scheme * sc, char *q);
 static pointer mk_sharp_const(scheme * sc, char *name);
@@ -394,7 +395,6 @@ static char *readstr_upto(scheme * sc, char *delim);
 static pointer readstrexp(scheme * sc);
 static INLINE int skipspace(scheme * sc);
 static int token(scheme * sc);
-static void printslashstring(scheme * sc, char *s, int len);
 static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen);
 static void printatom(scheme * sc, pointer l, int f);
 static pointer mk_proc(scheme * sc, enum scheme_opcodes op);
@@ -937,22 +937,58 @@ static pointer mk_number(scheme * sc, num n) {
   }
 }
 
-/* allocate name to string area */
-static char *store_string(scheme * sc, int len_str, const char *str,
-    char fill) {
-  char *q;
+static int utf8_decode(const char *s) {
+  int bytes;
+  int c;
+  if (IS_ASCII(*s)) {
+    return *s;
+  }
+  bytes = (*s < 0xE0) ? 2 : ((*s < 0xF0) ? 3 : 4);
+  c = *s & ((0x100 >> bytes) - 1);
+  while (--bytes) {
+    c = (c << 6) | (*(++s) & 0x3F);
+  }
+  return c;
+}
 
-  q = (char *) sc->malloc(len_str + 1);
+#define UTFSTR_LEN_GET(S) ((*((int*)(S)) >> 8) & 0x7FFFFF)
+#define UTFSTR_LEN_SET(LEN) ((((LEN) & 0x7FFFFF) << 8) | 0x80000080)
+
+/* allocate name to string area */
+static char *store_string(scheme * sc, int len, const char *str) {
+  char *q;
+  const char *end;
+  int char_size = 1;
+  int i;
+
+  for (i = 0; i < len; i++) {
+    if ((str[i] & 0x80) != 0) {
+      char_size = 4;
+      break;
+    }
+  }
+
+  q = (char *) sc->malloc((len + 1) * char_size);
   if (q == 0) {
     sc->no_memory = 1;
     return sc->strbuff;
   }
   if (str != 0) {
-    memcpy(q, str, len_str);
-  } else {
-    memset(q, fill, len_str);
+    if (char_size == 1) {
+      memcpy(q, str, len);
+      q[len] = 0;
+    } else {
+      i = 1;
+      end = str + len;
+      while (str < end) {
+        if (IS_ASCII(*str) || (*str & 0xE0) == 0xC0) {
+          ((int*) q)[i++] = utf8_decode(str);
+        }
+        str++;
+      }
+      ((int*) q)[0] = UTFSTR_LEN_SET(i - 1);
+    }
   }
-  q[len_str] = 0;
   return (q);
 }
 
@@ -962,19 +998,13 @@ INTERFACE pointer mk_string(scheme * sc, const char *str) {
 }
 
 INTERFACE pointer mk_counted_string(scheme * sc, const char *str, int len) {
+  char *s;
   pointer x = get_cell(sc, sc->NIL, sc->NIL);
   typeflag(x) = (T_STRING | T_ATOM);
-  strvalue(x) = store_string(sc, len, str, 0);
-  strlength(x) = len;
-  return (x);
-}
-
-INTERFACE pointer mk_empty_string(scheme * sc, int len, char fill) {
-  pointer x = get_cell(sc, sc->NIL, sc->NIL);
-  typeflag(x) = (T_STRING | T_ATOM);
-  strvalue(x) = store_string(sc, len, 0, fill);
-  strlength(x) = len;
-  return (x);
+  s = store_string(sc, len, str);
+  strvalue(x) = s;
+  strlength(x) = IS_ASCII(*s) ? len : UTFSTR_LEN_GET(s);
+  return x;
 }
 
 INTERFACE static pointer mk_vector(scheme * sc, int len) {
@@ -1313,7 +1343,7 @@ static int file_push(scheme * sc, const char *fname) {
     sc->load_stack[sc->file_i].rep.stdio.curr_line = 0;
     if (fname)
       sc->load_stack[sc->file_i].rep.stdio.filename =
-          store_string(sc, strlen(fname), fname, 0);
+          store_string(sc, strlen(fname), fname);
 #endif
   }
   return fin != 0;
@@ -1353,7 +1383,7 @@ static port *port_rep_from_filename(scheme * sc, const char *fn, int prop) {
 
 #if SHOW_ERROR_LINE
   if (fn)
-    pt->rep.stdio.filename = store_string(sc, strlen(fn), fn, 0);
+    pt->rep.stdio.filename = store_string(sc, strlen(fn), fn);
 
   pt->rep.stdio.curr_line = 0;
 #endif
@@ -1466,22 +1496,23 @@ static void port_close(scheme * sc, pointer p, int flag) {
   }
 }
 
-static int utf8_inchar(port * pt) {
-  int c = basic_inchar(pt), c1;
-  int bytes;
+static int utf8_inchar(port *pt) {
+  int c = basic_inchar(pt);
+  int bytes, i;
+  char buf[4];
   if (c == EOF || c < 0x80) {
     return c;
   }
+  buf[0] = (char) c;
   bytes = (c < 0xE0) ? 2 : ((c < 0xF0) ? 3 : 4);
-  c &= ((0x100 >> bytes) - 1);
-  while (--bytes) {
-    c1 = basic_inchar(pt);
-    if (c1 == EOF) {
+  for (i = 1; i < bytes; i++) {
+    c = basic_inchar(pt);
+    if (c == EOF) {
       return EOF;
     }
-    c = (c << 6) | (c1 & 0x3F);
+    buf[i] = (char) c;
   }
-  return c;
+  return utf8_decode(buf);
 }
 
 /* get new character from input file */
@@ -1894,14 +1925,55 @@ void long_to_str(long v, char *s, int base) {
   }
 }
 
+
+static void string_to_utf8(scheme * sc, char *s, int len) {
+  int i, c, d, charsize;
+  char *q = sc->strbuff;
+  if (IS_ASCII(*s)) {
+    charsize = 1;
+  } else {
+    charsize = 4;
+    s += 4;
+  }
+  for (i = 0; i < len; i++) {
+    if (charsize == 1) {
+      c = *s++;
+    } else {
+      c = *((int*) s);
+      s += 4;
+    }
+    if (c != 0) {
+      char_to_utf8(c, q, &d);
+      q += d;
+    } else {
+      *q++ = (char) 0xC0;
+      *q++ = (char) 0x80;
+    }
+  }
+  *q = 0;
+}
+
 static void printslashstring(scheme * sc, char *p, int len) {
-  int i;
+  int i, c, d, charsize;
+  char buf[5];
   unsigned char *s = (unsigned char *) p;
   putcharacter(sc, '"');
+  if (IS_ASCII(*p)) {
+    charsize = 1;
+  } else {
+    charsize = 4;
+    s += 4;
+  }
   for (i = 0; i < len; i++) {
-    if (*s == 0xff || *s == '"' || *s < ' ' || *s == '\\') {
+    if (charsize == 1) {
+      c = *s++;
+    } else {
+      c = *((int*) s);
+      s += 4;
+    }
+    if (c == '"' || c < ' ' || c == '\\') {
       putcharacter(sc, '\\');
-      switch (*s) {
+      switch (c) {
       case '"':
         putcharacter(sc, '"');
         break;
@@ -1918,7 +1990,7 @@ static void printslashstring(scheme * sc, char *p, int len) {
         putcharacter(sc, '\\');
         break;
       default:{
-          int d = *s / 16;
+          d = c / 16;
           putcharacter(sc, 'x');
           if (d < 10) {
             putcharacter(sc, d + '0');
@@ -1934,9 +2006,11 @@ static void printslashstring(scheme * sc, char *p, int len) {
         }
       }
     } else {
-      putcharacter(sc, *s);
+      char_to_utf8(c, buf, &d);
+      for (c = 0; c < d; c++) {
+        putcharacter(sc, buf[c]);
+      }
     }
-    s++;
   }
   putcharacter(sc, '"');
 }
@@ -2002,7 +2076,12 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
   } else if (is_string(l)) {
     if (!f) {
       p = strvalue(l);
-      *plen = strlength(l);
+      if (IS_ASCII(*p)) {
+        *plen = strlength(l);
+      } else {
+        string_to_utf8(sc, strvalue(l), strlength(l));
+        p = sc->strbuff;
+      }
     } else {                    /* Hack, uses the fact that printing is needed */
       *pp = sc->strbuff;
       *plen = 0;
@@ -3395,14 +3474,27 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
 
   case OP_MKSTRING:{           /* make-string */
       int fill = ' ';
-      int len;
+      int len, i;
+      char* s;
+      pointer p;
 
       len = ivalue(car(sc->args));
 
       if (cdr(sc->args) != sc->NIL) {
         fill = charvalue(cadr(sc->args));
       }
-      s_return(sc, mk_empty_string(sc, len, (char) fill));
+      p = mk_counted_string(sc, "", len);
+      s = strvalue(p);
+      if (IS_ASCII(fill)) {
+        memset(s, (char) fill, len);
+        s[len] = 0;
+      } else {
+        ((int*) s)[0] = UTFSTR_LEN_SET(len);
+        for (i = 1; i <= len; i++) {
+          ((int*) s)[i] = fill;
+        }
+      }
+      s_return(sc, p);
     }
 
   case OP_STRLEN:              /* string-length */
@@ -3464,7 +3556,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       for (x = sc->args; x != sc->NIL; x = cdr(x)) {
         len += strlength(car(x));
       }
-      newstr = mk_empty_string(sc, len, ' ');
+      newstr = mk_counted_string(sc, "", len);
       /* store the contents of the argument strings into the new string */
       for (pos = strvalue(newstr), x = sc->args; x != sc->NIL;
           pos += strlength(car(x)), x = cdr(x)) {
@@ -3497,7 +3589,7 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       }
 
       len = index1 - index0;
-      x = mk_empty_string(sc, len, ' ');
+      x = mk_counted_string(sc, "", len);
       memcpy(strvalue(x), str + index0, len);
       strvalue(x)[len] = 0;
 
@@ -4860,7 +4952,7 @@ void scheme_load_named_file(scheme * sc, FILE * fin, const char *filename) {
   sc->load_stack[0].rep.stdio.curr_line = 0;
   if (fin != stdin && filename)
     sc->load_stack[0].rep.stdio.filename =
-        store_string(sc, strlen(filename), filename, 0);
+        store_string(sc, strlen(filename), filename);
   else
     sc->load_stack[0].rep.stdio.filename = NULL;
 #endif
