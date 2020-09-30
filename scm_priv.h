@@ -77,6 +77,7 @@ extern "C" {
     char *alloc_seg[CELL_NSEGMENT];
     pointer cell_seg[CELL_NSEGMENT];
     int last_cell_seg;
+    int backchar;
 
 /* We use 4 registers. */
     pointer args;               /* register for arguments of function */

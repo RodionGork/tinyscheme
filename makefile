@@ -18,7 +18,7 @@
 #AR= echo
 
 # Unix, generally
-CC = gcc -fpic -pedantic
+CC = gcc -fpic -std=c99 -pedantic -Wall
 DEBUG=-g -Wall -Wno-char-subscripts -O
 Osuf=o
 SOsuf=so

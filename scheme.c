@@ -340,19 +340,19 @@ INTERFACE INLINE void setimmutable(pointer p) {
 
 #if USE_CHAR_CLASSIFIERS
 static INLINE int Cisalpha(int c) {
-  return isascii(c) && isalpha(c);
+  return isalpha(c) && c < 0x80 && c >= 0;
 }
 static INLINE int Cisdigit(int c) {
-  return isascii(c) && isdigit(c);
+  return isdigit(c) && c < 0x80 && c >= 0;
 }
 static INLINE int Cisspace(int c) {
-  return isascii(c) && isspace(c);
+  return isspace(c) && c < 0x80 && c >= 0;
 }
 static INLINE int Cisupper(int c) {
-  return isascii(c) && isupper(c);
+  return isupper(c) && c < 0x80 && c >= 0;
 }
 static INLINE int Cislower(int c) {
-  return isascii(c) && islower(c);
+  return islower(c) && c < 0x80 && c >= 0;
 }
 #endif
 
@@ -1484,15 +1484,13 @@ static int utf8_inchar(port * pt) {
   return c;
 }
 
-int charstore = -1;
-
 /* get new character from input file */
 static int inchar(scheme * sc) {
   int c;
   port *pt;
-  if (charstore >= 0) {
-    c = charstore;
-    charstore = -1;
+  if (sc->backchar >= 0) {
+    c = sc->backchar;
+    sc->backchar = -1;
     return c;
   }
   pt = sc->inport->_object._port;
@@ -1525,7 +1523,7 @@ static int basic_inchar(port * pt) {
 static void backchar(scheme * sc, int c) {
   if (c == EOF)
     return;
-  charstore = c;
+  sc->backchar = c;
 }
 
 static int realloc_port_string(scheme * sc, port * p) {
@@ -2309,7 +2307,7 @@ static INLINE void new_slot_in_env(scheme * sc, pointer variable,
   new_slot_spec_in_env(sc, sc->envir, variable, value);
 }
 
-static INLINE void set_slot_in_env(scheme * sc, pointer slot, pointer value) {
+static INLINE void set_slot_in_env(pointer slot, pointer value) {
   cdr(slot) = value;
 }
 
@@ -2769,7 +2767,7 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
   case OP_DEF1:                /* define */
     x = find_slot_in_env(sc, sc->envir, sc->code, 0);
     if (x != sc->NIL) {
-      set_slot_in_env(sc, x, sc->value);
+      set_slot_in_env(x, sc->value);
     } else {
       new_slot_in_env(sc, sc->code, sc->value);
     }
@@ -2793,7 +2791,7 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
   case OP_SET1:                /* set! */
     y = find_slot_in_env(sc, sc->envir, sc->code, 1);
     if (y != sc->NIL) {
-      set_slot_in_env(sc, y, sc->value);
+      set_slot_in_env(y, sc->value);
       s_return(sc, sc->value);
     } else {
       Error_1(sc, "set!: unbound variable:", sc->code);
@@ -3052,7 +3050,7 @@ static pointer opexe_1(scheme * sc, enum scheme_opcodes op) {
     typeflag(sc->value) = T_MACRO;
     x = find_slot_in_env(sc, sc->envir, sc->code, 0);
     if (x != sc->NIL) {
-      set_slot_in_env(sc, x, sc->value);
+      set_slot_in_env(x, sc->value);
     } else {
       new_slot_in_env(sc, sc->code, sc->value);
     }
@@ -3974,7 +3972,7 @@ static pointer opexe_4(scheme * sc, enum scheme_opcodes op) {
       port *p;
 
       if ((p = car(sc->args)->_object._port)->kind & port_string) {
-        off_t size;
+        int size;
         char *str;
 
         size = p->rep.string.curr - p->rep.string.start + 1;
@@ -4686,6 +4684,7 @@ int scheme_init_custom_alloc(scheme * sc, func_alloc malloc,
   sc->malloc = malloc;
   sc->free = free;
   sc->last_cell_seg = -1;
+  sc->backchar = -1;
   sc->sink = &sc->_sink;
   sc->NIL = &sc->_NIL;
   sc->T = &sc->_HASHT;
@@ -4898,7 +4897,7 @@ void scheme_define(scheme * sc, pointer envir, pointer symbol, pointer value) {
 
   x = find_slot_in_env(sc, envir, symbol, 0);
   if (x != sc->NIL) {
-    set_slot_in_env(sc, x, value);
+    set_slot_in_env(x, value);
   } else {
     new_slot_spec_in_env(sc, envir, symbol, value);
   }
