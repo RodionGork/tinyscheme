@@ -1007,6 +1007,19 @@ INTERFACE pointer mk_counted_string(scheme * sc, const char *str, int len) {
   return x;
 }
 
+static void upgrade_string(scheme *sc, pointer p) {
+  int len = strlength(p);
+  char *s = strvalue(p);
+  int *sbig = (int*) sc->malloc((len + 1) * sizeof(int));
+  int i;
+  sbig[0] = UTFSTR_LEN_SET(len);
+  for (i = 0; i < len; i++) {
+    sbig[i + 1] = s[i];
+  }
+  sc->free(s);
+  strvalue(p) = (char*) sbig;
+}
+
 INTERFACE static pointer mk_vector(scheme * sc, int len) {
   return get_vector_object(sc, len, sc->NIL);
 }
@@ -3516,7 +3529,10 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
         Error_1(sc, "string-ref: out of bounds:", x);
       }
 
-      s_return(sc, mk_character(sc, ((unsigned char *) str)[index]));
+      s_return(sc, mk_character(sc,
+        IS_ASCII(*str)
+          ? ((unsigned char *) str)[index]
+          : ((int*) str)[index + 1]));
     }
 
   case OP_STRSET:{             /* string-set! */
@@ -3536,31 +3552,57 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       }
 
       index = ivalue(y);
-      if (index >= strlength(car(sc->args))) {
+      if (index >= strlength(x)) {
         Error_1(sc, "string-set!: out of bounds:", y);
       }
 
       c = charvalue(caddr(sc->args));
 
-      str[index] = (char) c;
+      if (IS_ASCII(*str)) {
+        if (IS_ASCII(c)) {
+          str[index] = (char) c;
+          s_return(sc, x);
+        }
+        upgrade_string(sc, x);
+        str = strvalue(x);
+      }
+      ((int*) str)[index + 1] = c;
       s_return(sc, x);
     }
 
-  case OP_STRAPPEND:{          /* string-append */
-      /* in 1.29 string-append was in Scheme in init.scm but was too slow */
-      int len = 0;
+  case OP_STRAPPEND:{ /* string-append in core for speed*/
+      int len = 0, isbig = 0    , i;
       pointer newstr;
-      char *pos;
+      char *pos, *s;
 
       /* compute needed length for new string */
       for (x = sc->args; x != sc->NIL; x = cdr(x)) {
         len += strlength(car(x));
+        if (!IS_ASCII(*strvalue(car(x)))) {
+            isbig = 1;
+        }
       }
       newstr = mk_counted_string(sc, "", len);
+      if (isbig) {
+        upgrade_string(sc, newstr);
+      }
       /* store the contents of the argument strings into the new string */
-      for (pos = strvalue(newstr), x = sc->args; x != sc->NIL;
-          pos += strlength(car(x)), x = cdr(x)) {
-        memcpy(pos, strvalue(car(x)), strlength(car(x)));
+      for (pos = strvalue(newstr) + (isbig ? 4 : 0), x = sc->args; x != sc->NIL;
+          pos += strlength(car(x)) * (isbig ? 4 : 1), x = cdr(x)) {
+        len = strlength(car(x));
+        s = strvalue(car(x));
+        if (isbig) {
+          if (IS_ASCII(*s)) {
+            for (i = 0; i < len; i++) {
+              ((int*) pos)[i] = s[i];
+            }
+          } else {
+            memcpy(pos, s + 4, len * 4);
+          }
+        } else {
+          memcpy(pos, s, len);
+          pos[len] = 0;
+        }
       }
       s_return(sc, newstr);
     }
@@ -3590,7 +3632,13 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
 
       len = index1 - index0;
       x = mk_counted_string(sc, "", len);
-      memcpy(strvalue(x), str + index0, len);
+      
+      if (IS_ASCII(*str)) {
+        memcpy(strvalue(x), str + index0, len);
+      } else { //todo - perhaps downgrade if al ascii in substr
+        upgrade_string(sc, x);
+        memcpy(strvalue(x) + 4, str + (index0 + 1) * 4, len * 4);
+      }
       strvalue(x)[len] = 0;
 
       s_return(sc, x);
