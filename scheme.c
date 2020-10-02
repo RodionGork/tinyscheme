@@ -2010,7 +2010,7 @@ static void printslashstring(scheme * sc, char *p, int len) {
           } else {
             putcharacter(sc, d - 10 + 'A');
           }
-          d = *s % 16;
+          d = c % 16;
           if (d < 10) {
             putcharacter(sc, d + '0');
           } else {
