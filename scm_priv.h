@@ -137,10 +137,17 @@ extern "C" {
 #define LINESIZE 1024
 #endif
     char linebuff[LINESIZE];
-#ifndef STRBUFFSIZE
-#define STRBUFFSIZE 256
+#ifndef STRBUFF_INITIAL_SIZE
+#define STRBUFF_INITIAL_SIZE 128
 #endif
-    char strbuff[STRBUFFSIZE];
+#ifndef STRBUFF_MAX_SIZE
+#define STRBUFF_MAX_SIZE 65536
+#endif
+#ifndef AUXBUFF_SIZE
+#define AUXBUFF_SIZE 256
+#endif
+    char *strbuff;
+    int strbuff_size;
 
     FILE *tmpfp;
     int tok;

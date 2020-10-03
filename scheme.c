@@ -1654,15 +1654,36 @@ INTERFACE void putcharacter(scheme * sc, int c) {
   }
 }
 
+static int check_strbuff_size(scheme * sc, char **p) {
+  char *t;
+  int len = *p - sc->strbuff;
+  if (len + 4 < sc->strbuff_size) {
+    return 1;
+  }
+  sc->strbuff_size *= 2;
+  if (sc->strbuff_size >= STRBUFF_MAX_SIZE) {
+    sc->strbuff_size /= 2;
+    return 0;
+  }
+  t = sc->malloc(sc->strbuff_size);
+  memcpy(t, sc->strbuff, len);
+  *p = t + len;
+  sc->free(sc->strbuff);
+  sc->strbuff = t;
+  return 1;
+}
+
 /* read characters up to delimiter, but cater to character constants */
 static char *readstr_upto(scheme * sc, char *delim) {
   char *p = sc->strbuff;
   int c, len;
 
-  while ((p - sc->strbuff < sizeof(sc->strbuff))) {
+  while (1) {
     c = inchar(sc);
-    char_to_utf8(c, p, &len);
-    p += len;
+    if (check_strbuff_size(sc, &p)) {
+      char_to_utf8(c, p, &len);
+      p += len;
+    }
     if(is_one_of(delim, c)) {
       break;
     }
@@ -1686,7 +1707,7 @@ static pointer readstrexp(scheme * sc) {
 
   for (;;) {
     c = inchar(sc);
-    if (c == EOF || p - sc->strbuff > sizeof(sc->strbuff) - 1) {
+    if (c == EOF || !check_strbuff_size(sc, &p)) {
       return sc->F;
     }
     switch (state) {
@@ -1955,12 +1976,14 @@ static void string_to_utf8(scheme * sc, char *s, int len) {
       c = *((int*) s);
       s += 4;
     }
-    if (c != 0) {
-      char_to_utf8(c, q, &d);
-      q += d;
-    } else {
-      *q++ = (char) 0xC0;
-      *q++ = (char) 0x80;
+    if (check_strbuff_size(sc, &q)) {
+      if (c != 0) {
+        char_to_utf8(c, q, &d);
+        q += d;
+      } else {
+        *q++ = (char) 0xC0;
+        *q++ = (char) 0x80;
+      }
     }
   }
   *q = 0;
@@ -2133,7 +2156,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     p = symname(l);
   } else if (is_proc(l)) {
     p = sc->strbuff;
-    snprintf(p, STRBUFFSIZE, "#<%s PROCEDURE %ld>", procname(l), procnum(l));
+    snprintf(p, sc->strbuff_size, "#<%s PROCEDURE %ld>", procname(l), procnum(l));
   } else if (is_macro(l)) {
     p = "#<MACRO>";
   } else if (is_closure(l)) {
@@ -2142,7 +2165,7 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     p = "#<PROMISE>";
   } else if (is_foreign(l)) {
     p = sc->strbuff;
-    snprintf(p, STRBUFFSIZE, "#<FOREIGN PROCEDURE %ld>", procnum(l));
+    snprintf(p, sc->strbuff_size, "#<FOREIGN PROCEDURE %ld>", procnum(l));
   } else if (is_continuation(l)) {
     p = "#<CONTINUATION>";
   } else {
@@ -2418,7 +2441,7 @@ static pointer _Error_1(scheme * sc, const char *s, pointer a) {
 #endif
 
 #if SHOW_ERROR_LINE
-  char sbuf[STRBUFFSIZE];
+  char sbuf[AUXBUFF_SIZE];
 
   /* make sure error is not in REPL */
   if (sc->load_stack[sc->file_i].kind & port_file &&
@@ -2432,7 +2455,7 @@ static pointer _Error_1(scheme * sc, const char *s, pointer a) {
 
     /* we started from 0 */
     ln++;
-    snprintf(sbuf, STRBUFFSIZE, "(%s : %i) %s", fname, ln, s);
+    snprintf(sbuf, AUXBUFF_SIZE, "(%s : %i) %s", fname, ln, s);
 
     str = (const char *) sbuf;
   }
@@ -3502,6 +3525,8 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
         memset(s, (char) fill, len);
         s[len] = 0;
       } else {
+        upgrade_string(sc, p);
+        s = strvalue(p);
         ((int*) s)[0] = UTFSTR_LEN_SET(len);
         for (i = 1; i <= len; i++) {
           ((int*) s)[i] = fill;
@@ -4565,21 +4590,21 @@ static void Eval_Cycle(scheme * sc, enum scheme_opcodes op) {
   for (;;) {
     op_code_info *pcd = dispatch_table + sc->op;
     if (pcd->name != 0) {       /* if built-in function, check arguments */
-      char msg[STRBUFFSIZE];
+      char msg[AUXBUFF_SIZE];
       int ok = 1;
       int n = list_length(sc, sc->args);
 
       /* Check number of arguments */
       if (n < pcd->min_arity) {
         ok = 0;
-        snprintf(msg, STRBUFFSIZE, "%s: needs%s %d argument(s)",
+        snprintf(msg, AUXBUFF_SIZE, "%s: needs%s %d argument(s)",
             pcd->name,
             pcd->min_arity == pcd->max_arity ? "" : " at least",
             pcd->min_arity);
       }
       if (ok && n > pcd->max_arity) {
         ok = 0;
-        snprintf(msg, STRBUFFSIZE, "%s: needs%s %d argument(s)",
+        snprintf(msg, AUXBUFF_SIZE, "%s: needs%s %d argument(s)",
             pcd->name,
             pcd->min_arity == pcd->max_arity ? "" : " at most",
             pcd->max_arity);
@@ -4609,7 +4634,7 @@ static void Eval_Cycle(scheme * sc, enum scheme_opcodes op) {
           } while (i < n);
           if (i < n) {
             ok = 0;
-            snprintf(msg, STRBUFFSIZE, "%s: argument %d must be: %s",
+            snprintf(msg, AUXBUFF_SIZE, "%s: argument %d must be: %s",
                 pcd->name, i + 1, tests[j].kind);
           }
         }
@@ -4833,6 +4858,8 @@ int scheme_init_custom_alloc(scheme * sc, func_alloc malloc,
   sc->free_cell = &sc->_NIL;
   sc->fcells = 0;
   sc->no_memory = 0;
+  sc->strbuff = sc->malloc(STRBUFF_INITIAL_SIZE);
+  sc->strbuff_size = STRBUFF_INITIAL_SIZE;
   sc->inport = sc->NIL;
   sc->outport = sc->NIL;
   sc->save_inport = sc->NIL;
@@ -4959,6 +4986,7 @@ void scheme_deinit(scheme * sc) {
     typeflag(sc->loadport) = T_ATOM;
   }
   sc->loadport = sc->NIL;
+  sc->free(sc->strbuff);
   sc->gc_verbose = 0;
   gc(sc, sc->NIL, sc->NIL);
 
