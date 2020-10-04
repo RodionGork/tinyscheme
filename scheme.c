@@ -3244,14 +3244,14 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
 
   switch (op) {
 #if USE_MATH
-  case OP_INEX2EX:             /* inexact->exact */
+  case OP_INEX2EX:             /* exact */
     x = car(sc->args);
     if (num_is_integer(x)) {
       s_return(sc, x);
     } else if (modf(rvalue_unchecked(x), &dd) == 0.0) {
       s_return(sc, mk_integer(sc, ivalue(x)));
     } else {
-      Error_1(sc, "inexact->exact: not integral:", x);
+      Error_1(sc, "argument not integral:", x);
     }
 
   case OP_EXP:

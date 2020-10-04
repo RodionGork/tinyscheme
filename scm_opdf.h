@@ -56,7 +56,7 @@ _OP_DEF(opexe_0, "load", 1, 1, TST_STRING, OP_LOAD)
     _OP_DEF(opexe_1, "call-with-current-continuation", 1, 1, TST_NONE,
     OP_CONTINUATION)
 #if USE_MATH
-    _OP_DEF(opexe_2, "inexact->exact", 1, 1, TST_NUMBER, OP_INEX2EX)
+    _OP_DEF(opexe_2, "exact", 1, 1, TST_NUMBER, OP_INEX2EX)
     _OP_DEF(opexe_2, "exp", 1, 1, TST_NUMBER, OP_EXP)
     _OP_DEF(opexe_2, "log", 1, 1, TST_NUMBER, OP_LOG)
     _OP_DEF(opexe_2, "sin", 1, 1, TST_NUMBER, OP_SIN)

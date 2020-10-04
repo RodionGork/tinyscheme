@@ -1,0 +1,11 @@
+(inexact 5)
+5.0
+
+(inexact -7.0)
+-7.0
+
+(exact 5.0)
+5
+
+(exact -8)
+-8

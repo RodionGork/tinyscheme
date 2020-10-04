@@ -56,8 +56,7 @@
       `(macro (,(caadr dform) ,form)
          (apply (lambda ,(cdadr dform) ,@(cddr dform)) (cdr ,form))))))
 
-; Utilities for math. Notice that inexact->exact is primitive,
-; but exact->inexact is not.
+; Utilities for math.
 (define exact? integer?)
 (define (inexact? x) (and (real? x) (not (integer? x))))
 (define (even? n) (= (remainder n 2) 0))
@@ -68,7 +67,9 @@
 (define complex? number?)
 (define rational? real?)
 (define (abs n) (if (>= n 0) n (- n)))
-(define (exact->inexact n) (* n 1.0))
+(define (inexact n) (* n 1.0))
+(define (inexact->exact n) (exact n))
+(define (exact->inexact n) (inexact n))
 (define (<> n1 n2) (not (= n1 n2)))
 
 ; min and max must return inexact if any arg is inexact; use (+ n 0.0)
