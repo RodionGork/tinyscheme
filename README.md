@@ -1,29 +1,24 @@
-# TinyScheme
-
-[Try it in-browser](https://rodiongork.github.io/tinyscheme/) - somewhat cut-down version yet
+# TinyScheme R7
 
 _Disclaimer: this repo is not related to original authors, and there is no intention
-to take over their fame or their work. It's created to evaluate it
-and, perhaps, fix some issues._
+to take over their fame. It's created to implement some features from the modern [R7RS](https://small.r7rs.org/) standard._
 
-This is small `Scheme` language implementation written in `C` language to provide
-script abilities to C programs or be used standalone. It saw use in some popular
-application, among them a plugin for GIMP graphic editor.
+This is small `Scheme` language implementation written in `C` language. Obvious usages are:
+
+- as a sandbox to learn the language
+- as utility script-running tool, even to create `CGI-scripts` for web-server
+- as a tiny engine for running plugins and other extensions in your `C/C++` program
 
 The original is principally developed as [sourceforge project "TinyScheme"](https://sourceforge.net/projects/tinyscheme/).
 
-As it doesn't always have great activity there, and as sourceforge (though great resource) doesn't
-allow as easy cooperation as github, I took it from there at rev 125 in 
-attempt to bring some refreshing and cleanup.
+This offspring was cloned from rev125 there. Currently my wish is to bring it bit closer to `R7RS-small` standard
+(original is close to `R5RS` of 1998).
 
 For now the following changes happened:
 
-- fixes for few bugs (mostly those still open at original project page, see history)
-- tests in simple shell scripts are added
-- removed some compilation warnings
+- **UTF-8 is now supported in strings and characters** with minor limitation of case-conversion not extended above ASCII range
 - symbols are case-sensitive by default (to match R6RS, R7RS and speed-up a bit)
+- fixes for various bugs (many of them found in "open" state in original repo)
+- tests in simple shell scripts are added
 - removed some old unused code (eg. objlist implementation)
 - code cleanup / formatting (with `indent -br -brs -brf -nut -ci4 -nlp -npsl -npro -npcs -ce *.c`)
-
-If the changes will go bit too far it will make sense to modify project name in some manner to prevent
-confusion with original, but also to clarify it is related.
