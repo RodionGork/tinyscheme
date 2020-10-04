@@ -937,9 +937,10 @@ static pointer mk_number(scheme * sc, num n) {
   }
 }
 
-static int utf8_decode(const char *s) {
+static int utf8_decode(const char *p) {
   int bytes;
   int c;
+  unsigned char *s = (unsigned char*) p;
   if (IS_ASCII(*s)) {
     return *s;
   }
