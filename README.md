@@ -1,13 +1,15 @@
 # TinyScheme R7
 
-_Disclaimer: this repo is not related to original authors, and there is no intention
-to take over their fame. It's created to implement some features from the modern [R7RS](https://small.r7rs.org/) standard._
+_Disclaimer: this repo respects original authors and there is no intention
+to take over their fame. It's branched to implement some features from the modern [R7RS](https://small.r7rs.org/) standard
+and to fix some old bugs._
 
 This is small `Scheme` language implementation written in `C` language. Obvious usages are:
 
-- as a sandbox to learn the language
+- as a tiny engine for running plugins and other extensions in your `C/C++` program (suppose you want to change some part
+  of logic of your program without recompiling it every time).
+- as a sandbox to learn the language (as it supports most features except those which will make implementation not "tiny")
 - as utility script-running tool, even to create `CGI-scripts` for web-server
-- as a tiny engine for running plugins and other extensions in your `C/C++` program
 
 The original is principally developed as [sourceforge project "TinyScheme"](https://sourceforge.net/projects/tinyscheme/).
 
