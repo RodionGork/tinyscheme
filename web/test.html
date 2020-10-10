@@ -1,0 +1,55 @@
+<html>
+<head>
+  <title>TinyScheme R7 online version</title>
+  <script src="scheme.js"></script>
+  <style>
+    body {
+      max-width: 1200px;
+      margin: 0px auto;
+    }
+    #outbox {
+      background:black;
+      color:yellow;
+      font-family:mono;
+      min-height:300px;
+      width: 100%;
+      font-size: 130%;
+      margin: 10px 0px;
+    }
+    #input {
+      width: 100%;
+      margin: 10px 0px;
+      font-size: 113%;
+    }
+  </style>
+</head>
+<body>
+  <h1>TinyScheme R7 - try in browser</h1>
+  <div>Compiled from C sources using EMCC</div>
+  <textarea id="outbox" disabled="true"></textarea>
+  <textarea id="input" placeholder="(enter-commands-here)"></textarea><br/>
+  <button onclick="doExecute()">Execute</button>
+
+<script>
+
+var scheme_exec = Module.cwrap('scheme_exec', null, ['string']);
+
+var cnt = 0;
+
+function doOutput(text) {
+  document.getElementById('outbox').value += text;
+}
+
+function doExecute() {
+  var code = document.getElementById('input').value;
+  cnt += 1;
+  scheme_exec('(define res' + cnt + ' (begin ' + code + '))');
+  doOutput('res' + cnt + ': ');
+  scheme_exec('(display res' + cnt +') (newline)');
+}
+
+doOutput('---=== TinyScheme R7 ===---\r\n');
+</script>
+
+</body>
+</html>
