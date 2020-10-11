@@ -1,42 +1,86 @@
 <!doctype html>
-<html lang="en">
-
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>js-dos 6.22, TinyScheme</title>
-  <script src="./js-dos.js"></script>
+  <title>TinyScheme R7 online version</title>
+  <script src="scheme.js"></script>
   <style>
-    html, body, canvas, .dosbox-container {
+    body {
+      max-width: 1200px;
+      margin: 0px auto;
+    }
+    #outbox {
+      background:black;
+      color:yellow;
+      font-family:mono;
+      min-height:150px;
       width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
+      font-size: 130%;
+      margin: 10px 0px;
+    }
+    #input {
+      width: 100%;
+      margin: 10px 0px;
+      font-size: 113%;
+    }
+    .hint {
+      color: #444;
+      font-style: italic;
     }
   </style>
 </head>
-
 <body>
-  <canvas id="jsdos"></canvas>
-  <script>
-    var serverUrl = location.href;
-    if (/.*html$/.test(serverUrl)) {
-        serverUrl.substring(0, serverUrl.length - "index.html".length);
-    } else if (!/.*\/$/.test(serverUrl)) {
-        serverUrl += '/';
-    }
-    Dos(document.getElementById("jsdos"), {
-        wdosboxUrl: serverUrl + "wdosbox.js",
-        cycles: 'auto',
-        autolock: false,
-    }).ready(function (fs, main) {
-      fs.extract(serverUrl + "scheme.zip").then(function () {
-        main(["-c", "scheme.exe"]).then(function (ci) {
-            window.ci = ci;
-        });
-      });
-    });
-  </script>
-</body>
+  <div id="container">
+    <h1>TinyScheme R7 - in browser</h1>
+    <div class="hint">Compiled from
+      <a href="https://github.com/rodiongork/tinyscheme">C sources</a> to JavaScript using EMCC</div>
+    <textarea id="outbox" disabled="true"></textarea>
+    <textarea id="input" placeholder="(enter-commands-here)"></textarea><br/>
+    <button onclick="doExecute()">Execute</button>
+    &nbsp;|&nbsp;
+    <input id="autoclear" type="checkbox" checked="true">auto-clear command box</input>
+  </div>
+<script>
 
+var schemeExec = Module.cwrap('scheme_exec', null, ['string']);
+
+var cnt = 0;
+
+var outbox = document.getElementById('outbox');
+var input = document.getElementById('input');
+
+function doOutput(text) {
+  outbox.value += text;
+}
+
+function doExecute() {
+  cnt += 1;
+  var res = schemeExec('(define res' + cnt + ' (begin ' + input.value + '))');
+  if (res == 0) {
+    doOutput('res' + cnt + ': ');
+    schemeExec('(display res' + cnt +') (newline)');
+  }
+  if (document.getElementById('autoclear').checked) {
+    input.value = '';
+  }
+}
+
+function onStartup() {
+  doOutput('---=== ' + Module.ccall('get_version', 'string') + ' ===---\r\n');
+  schemeExec('(load "/init.scm")');
+}
+
+document.body.onload = function() {
+  var ch = document.getElementById('container').clientHeight;
+  var wh = window.innerHeight;
+  var dh = wh - ch;
+  if (dh <= 0) {
+    return;
+  }
+  outbox.style.height = (outbox.clientHeight + Math.floor(dh / 2)) + 'px';
+  input.style.height = (input.clientHeight + Math.floor(dh / 3)) + 'px';
+}
+
+</script>
+
+</body>
 </html>
