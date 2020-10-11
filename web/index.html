@@ -7,20 +7,22 @@
     body {
       max-width: 1200px;
       margin: 0px auto;
+      font-family: sans-serif;
     }
     #outbox {
       background:black;
       color:yellow;
-      font-family:mono;
+      font-family: monospace;
       min-height:150px;
       width: 100%;
-      font-size: 130%;
+      font-size: 150%;
       margin: 10px 0px;
     }
     #input {
       width: 100%;
       margin: 10px 0px;
-      font-size: 113%;
+      font-size: 125%;
+      font-family: monospace;
     }
     .hint {
       color: #444;
@@ -38,6 +40,8 @@
     <button onclick="doExecute()">Execute</button>
     &nbsp;|&nbsp;
     <input id="autoclear" type="checkbox" checked="true">auto-clear command box</input>
+    &nbsp;|&nbsp;
+    <a href="#" onclick="doClear(); return false">clear output</a>
   </div>
 <script>
 
@@ -52,6 +56,10 @@ function doOutput(text) {
   outbox.value += text;
 }
 
+function doClear() {
+  outbox.value = '';
+}
+
 function doExecute() {
   cnt += 1;
   var res = schemeExec('(define res' + cnt + ' (begin ' + input.value + '))');
@@ -59,6 +67,7 @@ function doExecute() {
     doOutput('res' + cnt + ': ');
     schemeExec('(display res' + cnt +') (newline)');
   }
+  outbox.scrollTop = outbox.scrollHeight;
   if (document.getElementById('autoclear').checked) {
     input.value = '';
   }
