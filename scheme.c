@@ -54,7 +54,7 @@
 
 #define OBJ_LIST_SIZE 461
 
-#define banner "TinyScheme 1.42"
+#define VERSION "TinyScheme R7 (v20.09)"
 
 #include <string.h>
 #include <stdlib.h>
@@ -5139,6 +5139,10 @@ pointer scheme_eval(scheme * sc, pointer obj) {
 }
 #endif
 
+char* get_version() {
+  return VERSION;
+}
+
 /* ========== Main ========== */
 
 #if STANDALONE
@@ -5162,7 +5166,7 @@ int main(int argc, char **argv) {
   int isfile = 1;
 
   if (argc == 1) {
-    printf(banner);
+    printf("%s", get_version());
   }
   if (argc == 2 && str_eq(argv[1], "-?")) {
     printf("Usage: tinyscheme -?\n");

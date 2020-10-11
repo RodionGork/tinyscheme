@@ -11,7 +11,7 @@
       background:black;
       color:yellow;
       font-family:mono;
-      min-height:300px;
+      min-height:150px;
       width: 100%;
       font-size: 130%;
       margin: 10px 0px;
@@ -21,34 +21,63 @@
       margin: 10px 0px;
       font-size: 113%;
     }
+    .hint {
+      color: #444;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
-  <h1>TinyScheme R7 - try in browser</h1>
-  <div>Compiled from C sources using EMCC</div>
-  <textarea id="outbox" disabled="true"></textarea>
-  <textarea id="input" placeholder="(enter-commands-here)"></textarea><br/>
-  <button onclick="doExecute()">Execute</button>
-
+  <div id="container">
+    <h1>TinyScheme R7 - in browser</h1>
+    <div class="hint">Compiled from C sources to JavaScript using EMCC</div>
+    <textarea id="outbox" disabled="true"></textarea>
+    <textarea id="input" placeholder="(enter-commands-here)"></textarea><br/>
+    <button onclick="doExecute()">Execute</button>
+    &nbsp;|&nbsp;
+    <input id="autoclear" type="checkbox" checked="true">auto-clear command box</input>
+  </div>
 <script>
 
-var scheme_exec = Module.cwrap('scheme_exec', null, ['string']);
+var schemeExec = Module.cwrap('scheme_exec', null, ['string']);
 
 var cnt = 0;
 
+var outbox = document.getElementById('outbox');
+var input = document.getElementById('input');
+
 function doOutput(text) {
-  document.getElementById('outbox').value += text;
+  outbox.value += text;
 }
 
 function doExecute() {
-  var code = document.getElementById('input').value;
   cnt += 1;
-  scheme_exec('(define res' + cnt + ' (begin ' + code + '))');
-  doOutput('res' + cnt + ': ');
-  scheme_exec('(display res' + cnt +') (newline)');
+  var res = schemeExec('(define res' + cnt + ' (begin ' + input.value + '))');
+  if (res == 0) {
+    doOutput('res' + cnt + ': ');
+    schemeExec('(display res' + cnt +') (newline)');
+  }
+  if (document.getElementById('autoclear').checked) {
+    input.value = '';
+  }
 }
 
-doOutput('---=== TinyScheme R7 ===---\r\n');
+function onStartup() {
+  doOutput('---=== ' + Module.ccall('get_version', 'string') + ' ===---\r\n');
+  schemeExec('(load "/init.scm")');
+}
+
+document.body.onload = function() {
+  var ch = document.getElementById('container').clientHeight;
+  var wh = window.innerHeight;
+  var dh = wh - ch;
+  if (dh <= 0) {
+    return;
+  }
+  outbox.style.height = (outbox.clientHeight + Math.floor(dh / 2)) + 'px';
+  input.style.height = (input.clientHeight + Math.floor(dh / 3)) + 'px';
+}
+
 </script>
 
 </body>
