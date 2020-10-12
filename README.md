@@ -23,6 +23,7 @@ This offspring was cloned from rev125 there. Currently my wish is to bring it bi
 
 ### Recent Changes and Improvements:
 
+- basic **bytevector** functions implemented
 - **UTF-8 is now supported in strings and characters** with minor limitation of case-conversion not extended above ASCII range
 - symbols are case-sensitive by default (to match R6RS, R7RS and speed-up a bit)
 - fixes for various bugs (many of them found in "open" state in original repo)

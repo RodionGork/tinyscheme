@@ -123,7 +123,7 @@ enum scheme_types {
   T_MACRO = 12,
   T_PROMISE = 13,
   T_ENVIRONMENT = 14,
-  T_LAST_SYSTEM_TYPE = 14
+  T_BYTEVECTOR = 15
 };
 
 /* ADJ is enough slack to align cells in a TYPE_BITS-bit boundary */
@@ -179,6 +179,11 @@ INTERFACE INLINE int is_vector(pointer p) {
 INTERFACE static void fill_vector(pointer vec, pointer obj);
 INTERFACE static pointer vector_elem(pointer vec, int ielem);
 INTERFACE static pointer set_vector_elem(pointer vec, int ielem, pointer a);
+
+INTERFACE INLINE int is_bvector(pointer p) {
+  return (type(p) == T_BYTEVECTOR);
+}
+
 INTERFACE INLINE int is_number(pointer p) {
   return (type(p) == T_NUMBER);
 }
@@ -1054,6 +1059,19 @@ INTERFACE static pointer set_vector_elem(pointer vec, int ielem, pointer a) {
   }
 }
 
+INTERFACE static pointer mk_bvector(scheme * sc, int len, int val) {
+  char *s;
+  pointer x = get_cell(sc, sc->NIL, sc->NIL);
+  typeflag(x) = (T_BYTEVECTOR | T_ATOM);
+  s = (char*) sc->malloc(len);
+  if (val >= 0) {
+    memset(s, val, len);
+  }
+  strvalue(x) = s;
+  strlength(x) = len;
+  return x;
+}
+
 /* get new symbol */
 INTERFACE pointer mk_symbol(scheme * sc, const char *name) {
   pointer x;
@@ -1543,6 +1561,27 @@ static int inchar(scheme * sc) {
     return EOF;
   }
   c = utf8_inchar(pt);
+  if (c == EOF && sc->inport == sc->loadport) {
+    /* Instead, set port_saw_EOF */
+    pt->kind |= port_saw_EOF;
+    return EOF;
+  }
+  return c;
+}
+
+static int inchar8(scheme * sc) {
+  int c;
+  port *pt;
+  if (sc->backchar >= 0) {
+    c = sc->backchar;
+    sc->backchar = -1;
+    return c;
+  }
+  pt = sc->inport->_object._port;
+  if (pt->kind & port_saw_EOF) {
+    return EOF;
+  }
+  c = basic_inchar(pt);
   if (c == EOF && sc->inport == sc->loadport) {
     /* Instead, set port_saw_EOF */
     pt->kind |= port_saw_EOF;
@@ -2169,6 +2208,9 @@ static void atom2str(scheme * sc, pointer l, int f, char **pp, int *plen) {
     snprintf(p, sc->strbuff_size, "#<FOREIGN PROCEDURE %ld>", procnum(l));
   } else if (is_continuation(l)) {
     p = "#<CONTINUATION>";
+  } else if (is_bvector(l)) {
+    p = sc->strbuff;
+    sprintf(p, "#u8(len=%d)", strlength(l));
   } else {
     p = "#<ERROR>";
   }
@@ -3748,6 +3790,64 @@ static pointer opexe_2(scheme * sc, enum scheme_opcodes op) {
       s_return(sc, car(sc->args));
     }
 
+  case OP_MKBVECTOR:{           /* make-bytevector */
+      int fill = 0;
+      int len;
+      pointer vec;
+
+      len = ivalue(car(sc->args));
+
+      if (cdr(sc->args) != sc->NIL) {
+        fill = ivalue(cadr(sc->args));
+      }
+      vec = mk_bvector(sc, len, fill);
+      if (sc->no_memory) {
+        s_return(sc, sc->sink);
+      }
+      s_return(sc, vec);
+    }
+
+  case OP_BVECREF:{             /* bytevector-u8-ref */
+      int index;
+
+      x = cadr(sc->args);
+      if (!is_integer(x)) {
+        Error_1(sc, "bytevector-u8-ref: index must be exact:", x);
+      }
+      index = ivalue(x);
+
+      if (index >= ivalue(car(sc->args))) {
+        Error_1(sc, "bytevector-u8-ref: out of bounds:", x);
+      }
+
+      s_return(sc, mk_integer(sc, ((unsigned char *) strvalue(car(sc->args)))[index]));
+    }
+
+  case OP_BVECSET:{             /* bytevector-u8-set! */
+      int index;
+
+      x = car(sc->args);
+      if (is_immutable(x)) {
+        Error_1(sc, "bytevector-u8-set!: unable to alter immutable data:", x);
+      }
+
+      y = cadr(sc->args);
+      if (!is_integer(y)) {
+        Error_1(sc, "bytevector-u8-set!: index must be exact:", y);
+      }
+
+      index = ivalue(y);
+      if (index >= strlength(x)) {
+        Error_1(sc, "bytevector-u8-set!: out of bounds:", y);
+      }
+
+      strvalue(x)[index] = (unsigned char) (ivalue(caddr(sc->args)));
+      s_return(sc, x);
+    }
+
+  case OP_BVECLEN:              /* bytevector-length */
+    s_return(sc, mk_integer(sc, strlength(car(sc->args))));
+
   default:
     sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);
@@ -3892,6 +3992,8 @@ static pointer opexe_3(scheme * sc, enum scheme_opcodes op) {
     s_retbool(is_environment(car(sc->args)));
   case OP_VECTORP:             /* vector? */
     s_retbool(is_vector(car(sc->args)));
+  case OP_BVECTORP:             /* bytevector? */
+    s_retbool(is_bvector(car(sc->args)));
   case OP_EQ:                  /* eq? */
     s_retbool(car(sc->args) == cadr(sc->args));
   case OP_EQV:                 /* eqv? */
@@ -4227,6 +4329,27 @@ static pointer opexe_5(scheme * sc, enum scheme_opcodes op) {
       s_return(sc, mk_character(sc, c));
     }
 
+  case OP_READ_U8:           /* read-u8 */
+  case OP_PEEK_U8:           /* peek-u8 */  {
+      int c;
+      if (is_pair(sc->args)) {
+        if (car(sc->args) != sc->inport) {
+          x = sc->inport;
+          x = cons(sc, x, sc->NIL);
+          s_save(sc, OP_SET_INPORT, x, sc->NIL);
+          sc->inport = car(sc->args);
+        }
+      }
+      c = inchar8(sc);
+      if (c == EOF) {
+        s_return(sc, sc->EOF_OBJ);
+      }
+      if (sc->op == OP_PEEK_U8) {
+        backchar(sc, c);
+      }
+      s_return(sc, mk_integer(sc, c));
+    }
+
   case OP_CHAR_READY:          /* char-ready? */  {
       pointer p = sc->inport;
       int res;
@@ -4525,25 +4648,25 @@ static struct {
   test_predicate fct;
   const char *kind;
 } tests[] = {
-  {
-  0, 0},                        /* unused */
-  {
-  is_any, 0}, {
-  is_string, "string"}, {
-  is_symbol, "symbol"}, {
-  is_port, "port"}, {
-  is_inport, "input port"}, {
-  is_outport, "output port"}, {
-  is_environment, "environment"}, {
-  is_pair, "pair"}, {
-  0, "pair or '()"}, {
-  is_character, "character"}, {
-  is_vector, "vector"}, {
-  is_number, "number"}, {
-  is_integer, "integer"}, {
-  is_nonneg, "non-negative integer"}
+  {0, 0},                        /* unused */
+  {is_any, 0},
+  {is_string, "string"},
+  {is_symbol, "symbol"},
+  {is_port, "port"},
+  {is_inport, "input port"},
+  {is_outport, "output port"},
+  {is_environment, "environment"},
+  {is_pair, "pair"},
+  {0, "pair or '()"},
+  {is_character, "character"},
+  {is_vector, "vector"},
+  {is_number, "number"},
+  {is_integer, "integer"},
+  {is_nonneg, "non-negative integer"},
+  {is_bvector, "bytevector"},
 };
 
+/* correspond with preceding struct "tests" */
 #define TST_NONE 0
 #define TST_ANY "\001"
 #define TST_STRING "\002"
@@ -4559,6 +4682,7 @@ static struct {
 #define TST_NUMBER "\014"
 #define TST_INTEGER "\015"
 #define TST_NATURAL "\016"
+#define TST_BVECTOR "\017"
 
 typedef struct {
   dispatch_func func;

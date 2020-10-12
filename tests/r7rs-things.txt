@@ -9,3 +9,9 @@
 
 (exact -8)
 -8
+
+(bytevector-length (make-bytevector 5))
+5
+
+(begin (define x (make-bytevector 5 3)) (bytevector-u8-set! x 2 17) (list (bytevector-u8-ref x 1) (bytevector-u8-ref x 2) (bytevector-u8-ref x 3)))
+(3 17 3)
