@@ -5297,6 +5297,7 @@ int main(int argc, char **argv) {
   scheme sc;
   FILE *fin = NULL;
   char *file_name = InitFile;
+  char *executable_name = argv[0];
   int retcode;
   int isfile = 1;
 
@@ -5328,6 +5329,13 @@ int main(int argc, char **argv) {
     char *p = getenv("TINYSCHEMEINIT");
     if (p != 0) {
       file_name = p;
+    } else {
+      strcpy(sc.strbuff, executable_name);
+      p = strrchr(sc.strbuff, '/');
+      if (p != 0) {
+        strcpy(p + 1, file_name);
+        file_name = sc.strbuff;
+      }
     }
   }
   do {
