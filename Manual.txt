@@ -175,7 +175,7 @@ Please read accompanying file COPYING.
      close-input-port, close-output-port, input-port?, output-port?,
      open-input-file, open-output-file.
      read, write, display, newline, write-char, read-char, peek-char,
-     read-u8, peek-u8.
+     read-u8, peek-u8, write-u8.
      char-ready? returns #t only for string ports, because there is no
      portable way in stdio to determine if a character is available.
      Also open-input-output-file, set-input-port, set-output-port (not R5RS)

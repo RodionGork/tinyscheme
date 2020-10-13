@@ -4042,6 +4042,17 @@ static pointer opexe_4(scheme * sc, enum scheme_opcodes op) {
     }
     s_goto(sc, OP_P0LIST);
 
+  case OP_WRITE_U8:            /* write-u8 */
+    if (is_pair(cdr(sc->args))) {
+      if (cadr(sc->args) != sc->outport) {
+        x = cons(sc, sc->outport, sc->NIL);
+        s_save(sc, OP_SET_OUTPORT, x, sc->NIL);
+        sc->outport = cadr(sc->args);
+      }
+    }
+    putcharacter(sc, ivalue(car(sc->args)));
+    s_return(sc, sc->T);
+
   case OP_NEWLINE:             /* newline */
     if (is_pair(sc->args)) {
       if (car(sc->args) != sc->outport) {
