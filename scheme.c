@@ -54,7 +54,7 @@
 
 #define OBJ_LIST_SIZE 461
 
-#define VERSION "TinyScheme R7 (v20.09)"
+#define VERSION "TinyScheme R7 (v20.10)"
 
 #include <string.h>
 #include <stdlib.h>
