@@ -57,8 +57,11 @@ Module['FS_createDataFile']('/', 'init.scm', fileData0, true, true, false);
     var necessaryPreJSTasks = Module['preRun'].slice();
   Module['print'] = function(text) {
   doOutput(text + '\r\n');
-}
-Module['onRuntimeInitialized'] = function() { onStartup() };
+};
+Module['onRuntimeInitialized'] = function() {
+  onStartup()
+};
+
 
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
@@ -1198,9 +1201,9 @@ function updateGlobalBufferAndViews(buf) {
   Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
 }
 
-var STACK_BASE = 5261776,
+var STACK_BASE = 5262304,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 18896;
+    STACK_MAX = 19424;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 
