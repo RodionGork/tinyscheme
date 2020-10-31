@@ -675,6 +675,14 @@
                          (set-output-port prev-outport)
                          res)))))
 
+(define (read-line)
+    (define (rls acc)
+        (let ((c (read-char)))
+            (if (eqv? c #\newline)
+                (if (and (pair? acc) (eqv? (car acc) #\return)) (cdr acc) acc)
+                (rls (cons c acc)))))
+    (list->string (reverse (rls '()))))
+
 ; Random number generator (maximum cycle)
 (define *seed* 1)
 (define (random-next)
