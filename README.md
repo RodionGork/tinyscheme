@@ -1,7 +1,7 @@
 # TinyScheme R7
 
-**Latest version is [20.09](https://github.com/RodionGork/tinyscheme/tags) -
-try it [in your browser](https://rodiongork.github.io/tinyscheme/).**
+**Latest version is [20.10](https://github.com/RodionGork/tinyscheme/tags) -
+try it [in your browser](https://rodiongork.github.io/tinyscheme/emu.html).**
 
 _Disclaimer: this repo respects original authors and there is no intention
 to take over their fame. It's branched to implement some features from the modern [R7RS](https://small.r7rs.org/) standard
