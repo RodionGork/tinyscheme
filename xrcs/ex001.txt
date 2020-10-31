@@ -1,0 +1,32 @@
+Newton's Square Root
+
++++
+
+Define function <code>(sqrt-newt x n)</code> which calculates square root
+by Newton's (or Heron's, or Babylonian) method, as described in SICP 1.1.7 -
+starting with approximation 1 your function should perform N steps to
+get closer to square root of X.<br/><br/>
+Call <code>(check)</code> to verify your solution.
+
++++
+
+(define test-cases '(
+    (5 0 1)
+    (25 1 13)
+    (1000 7 31.64201587)))
+
+(define (check)
+    (define (try-case c)
+        (let ((d (sqrt-newt (car c) (cadr c))) (m (caddr c)))
+            (if (< (abs (- m d)) (/ m 10000))
+                0
+                (begin
+                    (map display
+                        (list "wrong answer for " (car c) "," (cadr c)))
+                    (newline)
+                    1))))
+    (let ((errs (apply + (map try-case test-cases))))
+        (display "total errors: ")
+        (display errs)
+        (newline)
+        (= errs 0)))
