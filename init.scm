@@ -238,7 +238,7 @@
         (let* ((unz (apply unzip1-with-cdr lists))
                (cars (car unz))
                (cdrs (cdr unz)))
-          (apply proc cars) (apply map (cons proc cdrs))))))
+          (apply proc cars) (apply for-each (cons proc cdrs))))))
 
 (define (list-tail x k)
     (if (zero? k)
