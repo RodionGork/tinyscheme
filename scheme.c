@@ -137,6 +137,9 @@ enum scheme_types {
 #define MARK         32768      /* 1000000000000000 */
 #define UNMARK       32767      /* 0111111111111111 */
 
+#ifdef EVAL_LIMIT
+static int evalcnt = 0;
+#endif
 
 static num num_add(num a, num b);
 static num num_mul(num a, num b);
@@ -2741,6 +2744,13 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
     }
 
   case OP_EVAL:                /* main part of evaluation */
+#ifdef EVAL_LIMIT
+    evalcnt += 1;
+    if (evalcnt >= EVAL_LIMIT) {
+        fprintf(stderr, "Eval steps limit reached: %d\n", evalcnt);
+        exit(7);
+    }
+#endif
 #if USE_TRACING
     if (sc->tracing) {
       /*s_save(sc,OP_VALUEPRINT,sc->NIL,sc->NIL); */
@@ -5338,6 +5348,9 @@ int main(int argc, char **argv) {
       }
     }
   }
+#ifdef EVAL_LIMIT
+  evalcnt = 0;
+#endif
   do {
     if (str_eq(file_name, "-")) {
       fin = stdin;
