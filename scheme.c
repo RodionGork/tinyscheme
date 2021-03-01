@@ -5292,18 +5292,7 @@ char* get_version() {
 
 #if STANDALONE
 
-#if defined(__APPLE__) && !defined (OSX)
-int main() {
-  extern MacTS_main(int argc, char **argv);
-  char **argv;
-  int argc = ccommand(&argv);
-  MacTS_main(argc, argv);
-  return 0;
-}
-int MacTS_main(int argc, char **argv) {
-#else
 int main(int argc, char **argv) {
-#endif
   scheme sc;
   FILE *fin = NULL;
   char *file_name = InitFile;
