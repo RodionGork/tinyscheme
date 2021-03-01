@@ -346,6 +346,7 @@ Please read accompanying file COPYING.
      assuming that the executable is named tinyscheme.
 
      Use - in the place of a filename to denote stdin.
+     Use -- for stdin also, but disabling REPL mode.
      The -1 flag is meant for #! usage in shell scripts. If you specify
           #! /somewhere/tinyscheme -1
      then tinyscheme will be called to process the file. For example, the

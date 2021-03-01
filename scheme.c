@@ -1394,7 +1394,8 @@ static void file_pop(scheme * sc) {
 }
 
 static int file_interactive(scheme * sc) {
-  return sc->file_i == 0 && sc->load_stack[0].rep.stdio.file == stdin
+  return sc->interactive_repl
+      && sc->file_i == 0 && sc->load_stack[0].rep.stdio.file == stdin
       && sc->inport->_object._port->kind & port_file;
 }
 
@@ -5167,7 +5168,7 @@ void scheme_load_named_file(scheme * sc, FILE * fin, const char *filename) {
   sc->load_stack[0].rep.stdio.file = fin;
   sc->loadport = mk_port(sc, sc->load_stack);
   sc->retcode = 0;
-  if (fin == stdin) {
+  if (fin == stdin && !str_eq(filename, "--")) {
     sc->interactive_repl = 1;
   }
 #if SHOW_ERROR_LINE
@@ -5292,6 +5293,13 @@ char* get_version() {
 
 #if STANDALONE
 
+FILE *open_file(char *fname) {
+    if (str_eq(fname, "-") || str_eq(fname, "--")) {
+        return stdin;
+    }
+    return fopen(fname, "r");
+}
+
 int main(int argc, char **argv) {
   scheme sc;
   FILE *fin = NULL;
@@ -5341,16 +5349,12 @@ int main(int argc, char **argv) {
   evalcnt = 0;
 #endif
   do {
-    if (str_eq(file_name, "-")) {
-      fin = stdin;
-    } else if (str_eq(file_name, "-1") || str_eq(file_name, "-c")) {
+    if (str_eq(file_name, "-1") || str_eq(file_name, "-c")) {
       pointer args = sc.NIL;
       isfile = file_name[1] == '1';
       file_name = *argv++;
-      if (str_eq(file_name, "-")) {
-        fin = stdin;
-      } else if (isfile) {
-        fin = fopen(file_name, "r");
+      if (isfile) {
+        fin = open_file(file_name);
       }
       for (; *argv; argv++) {
         pointer value = mk_string(&sc, *argv);
@@ -5360,7 +5364,7 @@ int main(int argc, char **argv) {
       scheme_define(&sc, sc.global_env, mk_symbol(&sc, "*args*"), args);
 
     } else {
-      fin = fopen(file_name, "r");
+      fin = open_file(file_name);
     }
     if (isfile && fin == 0) {
       fprintf(stderr, "Could not open file %s\n", file_name);
@@ -5382,7 +5386,7 @@ int main(int argc, char **argv) {
     file_name = *argv++;
   } while (file_name != 0);
   if (argc == 1) {
-    scheme_load_named_file(&sc, stdin, 0);
+    scheme_load_named_file(&sc, stdin, "-");
   }
   retcode = sc.retcode;
   scheme_deinit(&sc);
