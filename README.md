@@ -1,11 +1,14 @@
 # TinyScheme R7
 
-**Latest version is [20.10](https://github.com/RodionGork/tinyscheme/tags) -
-try it [in your browser](https://rodiongork.github.io/tinyscheme/emu.html).**
+Latest version is [20.10](https://github.com/RodionGork/tinyscheme/tags)
+| **[Emulator](https://tinyscheme-r7.sourceforge.io/emu.html)**
+| [Project WebSite](https://tinyscheme-r7.sourceforge.io/)
+| [**Downloads** with binaries](https://sourceforge.net/projects/tinyscheme-r7/files)
 
 _Disclaimer: this repo respects original authors and there is no intention
-to take over their fame. It's branched to implement some features from the modern [R7RS](https://small.r7rs.org/) standard
-and to fix some old bugs._
+to take over their fame. It's branched to implement some features from the modern
+[R7RS](https://small.r7rs.org/) standard, to fix some old bugs
+and tailor it for use in educational purposes._
 
 ### About
 
@@ -16,7 +19,7 @@ This is small `Scheme` language implementation written in `C` language. Obvious 
 - as a sandbox to learn the language (as it supports most features except those which will make implementation not "tiny")
 - as utility script-running tool, even to create `CGI-scripts` for web-server
 
-The original is principally developed as [sourceforge project "TinyScheme"](https://sourceforge.net/projects/tinyscheme/).
+The original is principally developed as [tinyscheme.sourceforge.net](http://tinyscheme.sourceforge.net/home.html).
 
 This offspring was cloned from rev125 there. Currently my wish is to bring it bit closer to `R7RS-small` standard
 (original is close to `R5RS` of 1998).
