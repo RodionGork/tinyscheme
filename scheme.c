@@ -373,7 +373,6 @@ static INLINE int is_one_of(char *s, int c);
 static int alloc_cellseg(scheme * sc, int n);
 static INLINE pointer get_cell(scheme * sc, pointer a, pointer b);
 static pointer _get_cell(scheme * sc, pointer a, pointer b);
-static pointer reserve_cells(scheme * sc, int n);
 static pointer get_consecutive_cells(scheme * sc, int n);
 static pointer find_consecutive_cells(scheme * sc, int n);
 static void finalize_cell(scheme * sc, pointer a);
@@ -672,6 +671,7 @@ static pointer _get_cell(scheme * sc, pointer a, pointer b) {
   return (x);
 }
 
+#if USE_INTERFACE
 /* make sure that there is a given number of cells free */
 static pointer reserve_cells(scheme * sc, int n) {
   if (sc->no_memory) {
@@ -697,6 +697,7 @@ static pointer reserve_cells(scheme * sc, int n) {
   }
   return (sc->T);
 }
+#endif
 
 static pointer get_consecutive_cells(scheme * sc, int n) {
   pointer x;

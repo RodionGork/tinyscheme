@@ -1,21 +1,7 @@
 # Makefile for TinyScheme
-# Time-stamp: <2002-06-24 14:13:27 gildea>
 
-# Windows/2000
-#CC = cl -nologo
-#DEBUG= -W3 -Z7 -MD
-#DL_FLAGS=
-#SYS_LIBS=
-#Osuf=obj
-#SOsuf=dll
-#LIBsuf=.lib
-#EXE_EXT=.exe
-#LD = link -nologo
-#LDFLAGS = -debug -map -dll -incremental:no
-#LIBPREFIX =
-#OUT = -out:$@
-#RM= -del
-#AR= echo
+# there may be much legacy :(
+# tidy-up still in progress, sorry
 
 # Unix, generally
 CC = gcc -fpic -std=c99 -pedantic -Wall
@@ -36,37 +22,15 @@ DEBUG=-g -Wall -Wno-char-subscripts -O
 SYS_LIBS= -ldl -lm
 PLATFORM_FEATURES= -DSUN_DL=1
 
-# Cygwin
-#PLATFORM_FEATURES =
-
-# MinGW/MSYS
-#SOsuf=dll
-#PLATFORM_FEATURES =
-
-# Mac OS X
-#LD = gcc
-#LDFLAGS = --dynamiclib
-#DEBUG=-g -Wno-char-subscripts -O
-#SYS_LIBS= -ldl
-#PLATFORM_FEATURES= -DOSX=1
-
-
-# Solaris
-#SYS_LIBS= -ldl -lc
-#Osuf=o
-#SOsuf=so
-#EXE_EXT=
-#LD = ld
-#LDFLAGS = -G -Bsymbolic -z text
-#LIBPREFIX = lib
-#OUT = -o $@
-
-FEATURES = $(PLATFORM_FEATURES) -DUSE_DL=1 -DUSE_MATH=1
+FEATURES = $(PLATFORM_FEATURES) -DUSE_DL=1
 
 OBJS = scheme.$(Osuf) dynload.$(Osuf)
 
 LIBTARGET = $(LIBPREFIX)tinyscheme.$(SOsuf)
 STATICLIBTARGET = $(LIBPREFIX)tinyscheme.$(LIBsuf)
+
+execonly: scheme.h scm_priv.h scm_opdf.h
+	$(CC) -I. -O2 -o scheme$(EXE_EXT) scheme.c $(SYS_LIBS)
 
 all: $(LIBTARGET) $(STATICLIBTARGET) scheme$(EXE_EXT)
 	@echo -------
