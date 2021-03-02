@@ -1,6 +1,21 @@
         Building TinyScheme
         -------------------
 
+In the simplest form only compile "scheme.c" into executable. It
+includes 3 header files, but compiler handles this automatically. This
+can be done in any IDE or any command-line compiler. There could be minor
+details - e.g. "gcc" (but not "g++") compiler wants math libraries to be
+specified explicitly with "-lm" option.
+
+Here is also makefile, which, by default, does the same. Just run "make".
+
+To build libraries also, run "make all" instead.
+
+Below follow legacy instructions, some of them are not relevant nowadays.
+These are yet to be checked and cleaned.
+
+---
+
 The included makefile includes logic for Linux, Solaris and Win32, and can
 readily serve as an example for other OSes, especially Unixes. There are
 a lot of compile-time flags in TinyScheme (preprocessor defines) that can trim

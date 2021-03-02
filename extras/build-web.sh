@@ -3,4 +3,4 @@ docker run --rm -v $(pwd)/..:/src -u $(id -u):$(id -g) emscripten/emsdk emcc \
   -s EXPORTED_FUNCTIONS='["_scheme_exec", "_get_version"]' \
   -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
   --embed-file init.scm \
-  -o web/scheme.js --pre-js web/setup-pre.js
+  -o extras/scheme.js --pre-js extras/setup-pre.js

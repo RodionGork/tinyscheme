@@ -4,7 +4,8 @@
 # tidy-up still in progress, sorry
 
 # Unix, generally
-CC = gcc -fpic -std=c99 -pedantic -Wall
+COMPILER=gcc
+CC=$(COMPILER) -fpic -std=c99 -pedantic -Wall
 DEBUG=-g -Wall -Wno-char-subscripts -O
 Osuf=o
 SOsuf=so
@@ -31,6 +32,9 @@ STATICLIBTARGET = $(LIBPREFIX)tinyscheme.$(LIBsuf)
 
 execonly: scheme.h scm_priv.h scm_opdf.h
 	$(CC) -I. -O2 -o scheme$(EXE_EXT) scheme.c $(SYS_LIBS)
+	@echo -------
+	@echo Built executable only: ./scheme$(EXE_EXT)
+	@echo run 'make all' if need to build libraries
 
 all: $(LIBTARGET) $(STATICLIBTARGET) scheme$(EXE_EXT)
 	@echo -------
