@@ -25,6 +25,7 @@
 #include <limits.h>
 #include <float.h>
 #include <ctype.h>
+#include <time.h>
 
 
 /* Used for documentation purposes, to signal functions in 'interface' */
@@ -4010,6 +4011,10 @@ static pointer opexe_3(scheme * sc, enum scheme_opcodes op) {
     s_retbool(car(sc->args) == cadr(sc->args));
   case OP_EQV:                 /* eqv? */
     s_retbool(eqv(car(sc->args), cadr(sc->args)));
+  case OP_CURR_SEC:            /* current-second */
+    v.is_fixnum =1;
+    v.value.ivalue = (long) time(0);
+    s_return(sc, mk_number(sc, v));
   default:
     sprintf(sc->strbuff, "%d: illegal operator", sc->op);
     Error_0(sc, sc->strbuff);

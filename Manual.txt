@@ -260,6 +260,9 @@ Please read accompanying file COPYING.
      (make-closure <code> <environment>)
      Makes a new closure in the given environment.
 
+     (current-second)
+     Time since UNIX Epoch in seconds.
+
           Obsolete procedures
      (print-width <object>)
 
