@@ -263,6 +263,11 @@ Please read accompanying file COPYING.
      (current-second)
      Time since UNIX Epoch in seconds.
 
+     (eval-count)
+     Count of main "evaluation loop" of interpreter,
+     may be used as a time-independent metric
+     of code (in)efficiency.
+
           Obsolete procedures
      (print-width <object>)
 

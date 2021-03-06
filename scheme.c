@@ -138,9 +138,7 @@ enum scheme_types {
 #define MARK         32768      /* 1000000000000000 */
 #define UNMARK       32767      /* 0111111111111111 */
 
-#ifdef EVAL_LIMIT
-static int evalcnt = 0;
-#endif
+static long evalcnt = 0;
 
 static num num_add(num a, num b);
 static num num_mul(num a, num b);
@@ -2747,8 +2745,8 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
     }
 
   case OP_EVAL:                /* main part of evaluation */
-#ifdef EVAL_LIMIT
     evalcnt += 1;
+#ifdef EVAL_LIMIT
     if (evalcnt >= EVAL_LIMIT) {
         fprintf(stderr, "Eval steps limit reached: %d\n", evalcnt);
         exit(7);
@@ -4012,8 +4010,12 @@ static pointer opexe_3(scheme * sc, enum scheme_opcodes op) {
   case OP_EQV:                 /* eqv? */
     s_retbool(eqv(car(sc->args), cadr(sc->args)));
   case OP_CURR_SEC:            /* current-second */
-    v.is_fixnum =1;
-    v.value.ivalue = (long) time(0);
+    v.is_fixnum = 0;
+    v.value.rvalue = time(0);
+    s_return(sc, mk_number(sc, v));
+  case OP_EVAL_CNT:            /* eval-count */
+    v.is_fixnum = 1;
+    v.value.ivalue = evalcnt;
     s_return(sc, mk_number(sc, v));
   default:
     sprintf(sc->strbuff, "%d: illegal operator", sc->op);
@@ -5352,9 +5354,7 @@ int main(int argc, char **argv) {
       }
     }
   }
-#ifdef EVAL_LIMIT
   evalcnt = 0;
-#endif
   do {
     if (str_eq(file_name, "-1") || str_eq(file_name, "-c")) {
       pointer args = sc.NIL;
