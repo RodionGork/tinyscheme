@@ -4,14 +4,16 @@
 #define _SCHEME_PRIVATE_H
 
 #include "scheme.h"
-/*------------------ Ugly internals -----------------------------------*/
-/*------------------ Of interest only to FFI users --------------------*/
+
+// Memory limits, by default enough
+// for list of over 100k elements
+// also controlled by env vars of the same name
 
 #ifndef CELL_SEGSIZE
-#define CELL_SEGSIZE    5000    /* # of cells in one segment */
+#define CELL_SEGSIZE    20000
 #endif
 #ifndef CELL_NSEGMENT
-#define CELL_NSEGMENT   10      /* # of segments for cells */
+#define CELL_NSEGMENT   12
 #endif
 
 #ifndef MAXFIL
