@@ -138,7 +138,12 @@ enum scheme_types {
 #define MARK         32768      /* 1000000000000000 */
 #define UNMARK       32767      /* 0111111111111111 */
 
+static int cell_segsize;
+static int cell_nsegment;
 static long evalcnt = 0;
+#ifdef EVAL_LIMIT
+static long eval_limit;
+#endif
 
 static num num_add(num a, num b);
 static num num_mul(num a, num b);
@@ -591,11 +596,10 @@ static int alloc_cellseg(scheme * sc, int n) {
   if (adj < sizeof(struct cell)) {
     adj = sizeof(struct cell);
   }
-
   for (k = 0; k < n; k++) {
-    if (sc->last_cell_seg >= CELL_NSEGMENT - 1)
+    if (sc->last_cell_seg >= cell_nsegment - 1)
       return k;
-    cp = (char *) sc->malloc(CELL_SEGSIZE * sizeof(struct cell) + adj);
+    cp = (char *) sc->malloc(cell_segsize * sizeof(struct cell) + adj);
     if (cp == 0)
       return k;
     i = ++sc->last_cell_seg;
@@ -612,8 +616,8 @@ static int alloc_cellseg(scheme * sc, int n) {
       sc->cell_seg[i] = sc->cell_seg[i - 1];
       sc->cell_seg[--i] = p;
     }
-    sc->fcells += CELL_SEGSIZE;
-    last = newp + CELL_SEGSIZE - 1;
+    sc->fcells += cell_segsize;
+    last = newp + cell_segsize - 1;
     for (p = newp; p <= last; p++) {
       typeflag(p) = 0;
       cdr(p) = p + 1;
@@ -1321,7 +1325,7 @@ static void gc(scheme * sc, pointer a, pointer b) {
      free-list in sorted order.
    */
   for (i = sc->last_cell_seg; i >= 0; i--) {
-    p = sc->cell_seg[i] + CELL_SEGSIZE;
+    p = sc->cell_seg[i] + cell_segsize;
     while (--p >= sc->cell_seg[i]) {
       if (is_mark(p)) {
         clrmark(p);
@@ -2747,8 +2751,8 @@ static pointer opexe_0(scheme * sc, enum scheme_opcodes op) {
   case OP_EVAL:                /* main part of evaluation */
     evalcnt += 1;
 #ifdef EVAL_LIMIT
-    if (evalcnt >= EVAL_LIMIT) {
-        fprintf(stderr, "Eval steps limit reached: %d\n", evalcnt);
+    if (evalcnt >= eval_limit) {
+        fprintf(stderr, "Eval steps limit reached: %ld\n", evalcnt);
         exit(7);
     }
 #endif
@@ -4807,7 +4811,7 @@ static void Eval_Cycle(scheme * sc, enum scheme_opcodes op) {
     }
     if (sc->no_memory) {
       fprintf(stderr, "No memory!\n");
-      sc->retcode = -1;
+      sc->retcode = 9;
       return;
     }
   }
@@ -5014,6 +5018,8 @@ int scheme_init_custom_alloc(scheme * sc, func_alloc malloc,
   sc->free_cell = &sc->_NIL;
   sc->fcells = 0;
   sc->no_memory = 0;
+  sc->alloc_seg = sc->malloc(sizeof(*(sc->alloc_seg)) * cell_nsegment);
+  sc->cell_seg = sc->malloc(sizeof(*(sc->cell_seg)) * cell_nsegment);
   sc->strbuff = sc->malloc(STRBUFF_INITIAL_SIZE);
   sc->strbuff_size = STRBUFF_INITIAL_SIZE;
   sc->inport = sc->NIL;
@@ -5149,6 +5155,8 @@ void scheme_deinit(scheme * sc) {
   for (i = 0; i <= sc->last_cell_seg; i++) {
     sc->free(sc->alloc_seg[i]);
   }
+  sc->free(sc->cell_seg);
+  sc->free(sc->alloc_seg);
 
 #if SHOW_ERROR_LINE
   for (i = 0; i <= sc->file_i; i++) {
@@ -5309,6 +5317,17 @@ FILE *open_file(char *fname) {
     return fopen(fname, "r");
 }
 
+void initFromEnv() {
+    char* val = getenv("CELL_SEGSIZE");
+    cell_segsize = val != NULL ? atoi(val) : CELL_SEGSIZE;
+    val = getenv("CELL_NSEGMENT");
+    cell_nsegment = val != NULL ? atoi(val) : CELL_NSEGMENT;
+#ifdef EVAL_LIMIT
+    val = getenv("EVAL_LIMIT");
+    eval_limit = val != NULL ? atol(val) : EVAL_LIMIT;
+#endif
+}
+
 int main(int argc, char **argv) {
   scheme sc;
   FILE *fin = NULL;
@@ -5317,6 +5336,7 @@ int main(int argc, char **argv) {
   int retcode;
   int isfile = 1;
 
+  initFromEnv();
   if (argc == 1) {
     printf("%s", get_version());
   }

@@ -7,6 +7,31 @@
 /*------------------ Ugly internals -----------------------------------*/
 /*------------------ Of interest only to FFI users --------------------*/
 
+#ifndef CELL_SEGSIZE
+#define CELL_SEGSIZE    5000    /* # of cells in one segment */
+#endif
+#ifndef CELL_NSEGMENT
+#define CELL_NSEGMENT   10      /* # of segments for cells */
+#endif
+
+#ifndef MAXFIL
+#define MAXFIL 64
+#endif
+
+#ifndef LINESIZE
+#define LINESIZE 1024
+#endif
+
+#ifndef STRBUFF_INITIAL_SIZE
+#define STRBUFF_INITIAL_SIZE 128
+#endif
+#ifndef STRBUFF_MAX_SIZE
+#define STRBUFF_MAX_SIZE 65536
+#endif
+#ifndef AUXBUFF_SIZE
+#define AUXBUFF_SIZE 256
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,15 +92,8 @@ extern "C" {
     int retcode;
     int tracing;
 
-
-#ifndef CELL_SEGSIZE
-#define CELL_SEGSIZE    5000    /* # of cells in one segment */
-#endif
-#ifndef CELL_NSEGMENT
-#define CELL_NSEGMENT   10      /* # of segments for cells */
-#endif
-    char *alloc_seg[CELL_NSEGMENT];
-    pointer cell_seg[CELL_NSEGMENT];
+    char **alloc_seg;
+    pointer *cell_seg;
     int last_cell_seg;
     int backchar;
 
@@ -122,9 +140,6 @@ extern "C" {
     pointer save_inport;
     pointer loadport;
 
-#ifndef MAXFIL
-#define MAXFIL 64
-#endif
     port load_stack[MAXFIL];    /* Stack of open files for port -1 (LOADing) */
     int nesting_stack[MAXFIL];
     int file_i;
@@ -133,19 +148,7 @@ extern "C" {
     char gc_verbose;            /* if gc_verbose is not zero, print gc status */
     char no_memory;             /* Whether mem. alloc. has failed */
 
-#ifndef LINESIZE
-#define LINESIZE 1024
-#endif
     char linebuff[LINESIZE];
-#ifndef STRBUFF_INITIAL_SIZE
-#define STRBUFF_INITIAL_SIZE 128
-#endif
-#ifndef STRBUFF_MAX_SIZE
-#define STRBUFF_MAX_SIZE 65536
-#endif
-#ifndef AUXBUFF_SIZE
-#define AUXBUFF_SIZE 256
-#endif
     char *strbuff;
     int strbuff_size;
 
@@ -219,8 +222,4 @@ extern "C" {
 }
 #endif
 #endif
-/*
-Local variables:
-c-file-style: "k&r"
-End:
-*/
+

@@ -365,6 +365,16 @@ Please read accompanying file COPYING.
 
      The -c flag permits execution of arbitrary Scheme code.
 
+     Additionally there are environment variables:
+
+     CELL_SEGSIZE and CELL_NSEGMENT - expand available memory; memory is
+     allocated by segments, starting with 3, up to CELL_NSEGMENT; every
+     segment can hold CELL_SEGSIZE cells; before allocating more, GC will
+     try to free up existing. Defaults are 5000 and 10. Error code on
+     memory limit reaching is 9.
+
+     EVAL_LIMIT (if compiled with define of the same name) will stop
+     execution on reaching given amount of steps (with error code 7).
 
      Error Handling
      --------------
