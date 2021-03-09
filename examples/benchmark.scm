@@ -1,5 +1,13 @@
 #!../scheme -1
 
+; ========================
+; Simple benchmark to test performance (e.g. with various compile options)
+; ========================
+; On my AMD at 2600 MHz, compiled with -O2 (64-bit ints)
+; it says:
+; Evaluation time: 97.0
+; 2035880.0 evals per second
+
 (define *t0* (current-second))
 (define *ec0* (eval-count))
 
