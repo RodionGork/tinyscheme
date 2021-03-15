@@ -138,8 +138,9 @@ enum scheme_types {
 #define MARK         32768      /* 1000000000000000 */
 #define UNMARK       32767      /* 0111111111111111 */
 
-static int cell_segsize;
-static int cell_nsegment;
+// these may be overriden by env properties
+static int cell_segsize = CELL_SEGSIZE;
+static int cell_nsegment = CELL_NSEGMENT;
 static long evalcnt = 0;
 #ifdef EVAL_LIMIT
 static long eval_limit;
