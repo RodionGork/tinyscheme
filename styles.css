@@ -1,0 +1,37 @@
+body {
+  max-width: 1200px;
+  margin: 0px auto;
+  font-family: sans-serif;
+  color: #242;
+}
+a {
+  color: #11a;
+  text-decoration: none;
+}
+a:hover {
+  color: #3c3;
+  text-decoration: underline;
+}
+#outbox {
+  background:black;
+  color:yellow;
+  font-family: monospace;
+  min-height:150px;
+  width: 100%;
+  font-size: 150%;
+  margin: 10px 0px;
+}
+#input {
+  width: 100%;
+  margin: 10px 0px;
+  font-size: 125%;
+  font-family: monospace;
+}
+.hint {
+  color: #444;
+  font-style: italic;
+}
+code {
+  font-weight: bold;
+  color: #82a;
+}
